@@ -85,7 +85,7 @@ class Timer extends HTMLElement {
     * @param {number} totalSeconds
     */
     setClock(totalSeconds) {
-        if (totalSeconds <= 0) {
+        if (totalSeconds === -9) {
             this.sendNotification("timerexpired")
         } else {
             let hours = formatTime(Math.floor(totalSeconds / 3600))
@@ -98,6 +98,9 @@ class Timer extends HTMLElement {
     start() {
         this.sendNotification("clockstarted")
         this.button.textContent = "Stop"
+        setTimeout(() => {
+            this.setClock(-9)
+        }, +this.getTotalSeconds() * 1e3)
     }
 
     stop() {
