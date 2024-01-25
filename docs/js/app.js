@@ -16,31 +16,32 @@ class Timer extends HTMLElement {
         this.setAttribute("id", ""+id)
         /** @type {HTMLInputElement} */
         // @ts-ignore
-        this.hours = html('input', {
+        this.hours = h('input', {
             value: hours || null,
             placeholder: 'Hrs',
             size: "2",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
-        this.minutes = html('input', {
+        this.minutes = h('input', {
             value: minutes || null,
             placeholder: 'Min',
             size: "2",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
-        this.seconds = html('input', {
+        this.seconds = h('input', {
             value: seconds || null,
             placeholder: 'Sec',
             size: "2",
         })
-        this.button = html('button', {}, "Start")
-        this.removeButton = html('button', {}, "❌")
-        this.clock = html('span', {})
+        this.button = h('button', {}, "Start")
+        this.removeButton = h('button', {}, "❌")
+        this.restart = h('button', { class: 'hidden', html: '&#8635;' })
+        this.clock = h('span', {})
         this.append(
             this.hours, ":", this.minutes, ":", this.seconds,
-            " — ", this.clock, this.button, this.removeButton)
+            " — ", this.clock, this.button, this.restart, this.removeButton)
 
         this.addEventListener('click', this)
         this.addEventListener('change', this)
@@ -60,13 +61,16 @@ class Timer extends HTMLElement {
         if (e.target === this.button && this.state === "stopped") {
             e.preventDefault()
             this.state = "started"
-            this.button.textContent = "Stop"
             this.start()
         } else if (e.target === this.button && this.state === "started") {
             e.preventDefault()
             this.state = "stopped"
-            this.button.textContent = "Start"
             this.stop()
+        } else if (e.target === this.restart) {
+            e.preventDefault()
+            this.stop()
+            this.start()
+            this.state = "started"
         } else if (e.target === this.removeButton) {
             e.preventDefault()
             this.sendNotification("timerremoved")
@@ -93,6 +97,7 @@ class Timer extends HTMLElement {
 
     start() {
         this.sendNotification("clockstarted")
+        this.button.textContent = "Stop"
     }
 
     stop() {
@@ -100,6 +105,16 @@ class Timer extends HTMLElement {
         this.clock.textContent = ""
         this.state = "stopped"
         this.button.textContent = "Start"
+        this.restart.classList.add('hidden')
+    }
+
+    renderTimeExpired() {
+        let bell = document.getElementById("bell")
+        if (!(bell instanceof HTMLTemplateElement)) return
+        let bellClone = bell.content.cloneNode(true)
+        this.clock.textContent = ""
+        this.clock.appendChild(bellClone)
+        this.restart.classList.remove('hidden')
     }
 
     /**
@@ -147,11 +162,11 @@ class TimerList extends HTMLElement {
         this.addEventListener('timerremoved', this)
         this.addEventListener('timerexpired', this)
 
-        this.addTimer = html('button', {}, "Add Timer")
+        this.addTimer = h('button', {}, "Add Timer")
 
         this.append(...this.timers.map(t =>
-            html("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds))),
-            html('div', {}, this.addTimer))
+            h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds))),
+            h('div', {}, this.addTimer))
     }
 
     tick() {
@@ -189,11 +204,7 @@ class TimerList extends HTMLElement {
     handletimerexpired(e) {
         let timer = e.detail.timer
         this.removeActiveTimer(timer)
-        let bell = document.getElementById("bell")
-        if (!(bell instanceof HTMLTemplateElement)) return
-        let bellClone = bell.content.cloneNode(true)
-        timer.clock.textContent = ""
-        timer.clock.appendChild(bellClone)
+        timer.renderTimeExpired()
     }
 
     /**
@@ -204,7 +215,7 @@ class TimerList extends HTMLElement {
         let id = Math.max(...this.timers.map(t => t.id), 0) + 1
         let timer = new Timer(id, 0, 0, 0)
         this.timers.push({ hours: 0, minutes: 0, seconds: 0, id })
-        this.insertBefore(html("div", {}, timer), this.addTimer.parentElement)
+        this.insertBefore(h("div", {}, timer), this.addTimer.parentElement)
         this.save()
     }
 
@@ -284,10 +295,15 @@ timerEl.append(new TimerList())
 * @param {Record<string, string | number | null>} props
 * @param {(string | Node)[]} children
 */
-function html(tag, props = {}, ...children) {
+function h(tag, props = {}, ...children) {
     const el = document.createElement(tag)
     for (const [k, v] of Object.entries(props)) {
-        v != null && el.setAttribute(k, "" + v)
+        if (v == null) continue
+        if (k === "html") {
+            el.innerHTML = "" + v
+        } else {
+            el.setAttribute(k, "" + v)
+        }
     }
     el.append(...children)
     return el
