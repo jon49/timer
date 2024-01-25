@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Timer</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="css/style.css" rel="stylesheet">
+<style>
+body {
+  background-color: #333;
+  color: lightblue;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1.5em;
+  max-width: 800px;
+  margin: 0 auto;
+}
+button {
+    background-color: #555;
+    border: 1px solid lightblue;
+    color: lightblue;
+    cursor: pointer;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.5em;
+    margin: 0.25em;
+    padding: 0.25em;
+}
+input {
+    background-color: #555;
+    border: 1px solid lightblue;
+    color: lightblue;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.5em;
+    margin: 0.25em;
+    padding: 0.25em;
+}
+</style>
+    </head>
+    <body>
+
+        <main>
+            <h1>Timer</h1>
+            <div id="timer"></div>
+        </main>
+
+        <template id="bell">
+            <iframe
+                width="112"
+                height="63"
+                style="position:relative;top:23px;"
+                src="https://www.youtube.com/embed/475-VWbH3wY?si=lROSHQltHmUmtqpZ&start=2&autoplay=1"
+                title="Time up"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+        </template>
+
+        <!-- <script src="https://www.youtube.com/iframe_api"></script> -->
+        <script src="./js/app.js"></script>
+
+    </body>
+</html>

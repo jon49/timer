@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "npx serve docs"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
