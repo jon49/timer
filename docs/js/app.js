@@ -192,6 +192,7 @@ class TimerList extends HTMLElement {
         let bell = document.getElementById("bell")
         if (!(bell instanceof HTMLTemplateElement)) return
         let bellClone = bell.content.cloneNode(true)
+        timer.clock.textContent = ""
         timer.clock.appendChild(bellClone)
     }
 
