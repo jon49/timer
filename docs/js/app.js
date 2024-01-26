@@ -98,12 +98,14 @@ class Timer extends HTMLElement {
     start() {
         this.sendNotification("clockstarted")
         this.button.textContent = "Stop"
-        setTimeout(() => {
+        if (this.timeoutId) clearTimeout(this.timeoutId)
+        this.timeoutId = setTimeout(() => {
             this.setClock(-9)
         }, +this.getTotalSeconds() * 1e3)
     }
 
     stop() {
+        clearTimeout(this.timeoutId)
         this.sendNotification("clockstopped")
         this.clock.textContent = ""
         this.state = "stopped"
