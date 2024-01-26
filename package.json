@@ -1,8 +1,15 @@
 {
   "scripts": {
-    "start": "npx serve docs"
+    "start": "npx serve docs",
+    "start:van": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app-van.js --servedir=docs --watch",
+    "build:van": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app-van.js --minify"
   },
   "dependencies": {
-    "serve": "^14.2.1"
+    "serve": "^14.2.1",
+    "vanjs-core": "^1.2.8",
+    "vanjs-ext": "^0.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.12"
   }
 }
