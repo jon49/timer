@@ -10,38 +10,56 @@ class Timer extends HTMLElement {
     * @param {number} hours
     * @param {number} minutes
     * @param {number} seconds
+    * @param {string} title
     */
-    constructor(id, hours, minutes, seconds) {
+    constructor(id, hours, minutes, seconds, title) {
         super()
         this.setAttribute("id", ""+id)
         /** @type {HTMLInputElement} */
         // @ts-ignore
         this.hours = h('input', {
+            type: "number",
             value: hours || null,
             placeholder: 'Hrs',
-            size: "2",
+            size: "3",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
         this.minutes = h('input', {
+            type: "number",
             value: minutes || null,
             placeholder: 'Min',
-            size: "2",
+            size: "3",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
         this.seconds = h('input', {
+            type: "number",
             value: seconds || null,
             placeholder: 'Sec',
-            size: "2",
+            size: "3",
+        })
+        /** @type {HTMLInputElement} */
+        // @ts-ignore
+        this._title = h("input", {
+            class: "plain",
+            type: "text",
+            value: title || null,
+            placeholder: "Title",
         })
         this.button = h('button', {}, "Start")
         this.removeButton = h('button', {}, "❌")
         this.restart = h('button', { class: 'hidden', html: '&#8635;' })
         this.clock = h('span', {})
         this.append(
-            this.hours, ":", this.minutes, ":", this.seconds,
-            " — ", this.clock, this.button, this.restart, this.removeButton)
+            h("div", {},
+                h("label", {},
+                this._title,
+                h("span", { class: "editable-pencil", html: "&#9998;"}))),
+            h("div", {}, 
+                this.hours, ":", this.minutes, ":", this.seconds,
+                " — ", this.clock, this.button, this.restart, this.removeButton)
+        )
 
         this.addEventListener('click', this)
         this.addEventListener('change', this)
@@ -69,6 +87,7 @@ class Timer extends HTMLElement {
         } else if (e.target === this.restart) {
             e.preventDefault()
             this.stop()
+            this.clock.textContent = "00:00:00"
             this.start()
             this.state = "started"
         } else if (e.target === this.removeButton) {
@@ -149,6 +168,7 @@ customElements.define("x-timer", Timer)
 * @property {number} hours
 * @property {number} minutes
 * @property {number} seconds
+* @property {string} title
 */
 
 class TimerList extends HTMLElement {
@@ -170,7 +190,7 @@ class TimerList extends HTMLElement {
         this.addTimer = h('button', {}, "Add Timer")
 
         this.append(...this.timers.map(t =>
-            h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds))),
+            h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title))),
             h('div', {}, this.addTimer))
     }
 
@@ -218,8 +238,8 @@ class TimerList extends HTMLElement {
     handleclick(e) {
         if (e.target !== this.addTimer) return
         let id = Math.max(...this.timers.map(t => t.id), 0) + 1
-        let timer = new Timer(id, 0, 0, 0)
-        this.timers.push({ hours: 0, minutes: 0, seconds: 0, id })
+        let timer = new Timer(id, 0, 0, 0, "")
+        this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "" })
         this.insertBefore(h("div", {}, timer), this.addTimer.parentElement)
         this.save()
     }
@@ -267,6 +287,7 @@ class TimerList extends HTMLElement {
         data.hours = +timer.hours.value
         data.minutes = +timer.minutes.value
         data.seconds = +timer.seconds.value
+        data.title = timer._title.value
         this.save()
     }
 
