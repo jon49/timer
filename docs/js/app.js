@@ -50,15 +50,18 @@ class Timer extends HTMLElement {
         this.button = h('button', {}, "Start")
         this.removeButton = h('button', {}, "❌")
         this.restart = h('button', { class: 'hidden', html: '&#8635;' })
-        this.clock = h('span', {})
+        this.clock = h('span', { class: "pointer", "aria-label": "Click to stop.", title: "Click to stop." })
+        this.alarm = h("span")
+        this.clockContainer = h('span', { class: "relative-container" },
+            this.clock, this.alarm)
         this.append(
             h("div", {},
                 h("label", {},
                 this._title,
                 h("span", { class: "editable-pencil", html: "&#9998;"}))),
             h("div", {}, 
-                this.hours, ":", this.minutes, ":", this.seconds,
-                " — ", this.clock, this.button, this.restart, this.removeButton)
+                this.hours, ":", this.minutes, ":", this.seconds, " — ",
+                this.clockContainer, this.button, this.restart, this.removeButton)
         )
 
         this.addEventListener('click', this)
@@ -80,8 +83,10 @@ class Timer extends HTMLElement {
             e.preventDefault()
             this.state = "started"
             this.start()
-        } else if (e.target === this.button && this.state === "started") {
+        } else if (e.target === this.clock && this.state === "started") {
             e.preventDefault()
+            e.stopPropagation()
+            e.stopImmediatePropagation()
             this.state = "stopped"
             this.stop()
         } else if (e.target === this.restart) {
@@ -116,7 +121,7 @@ class Timer extends HTMLElement {
 
     start() {
         this.sendNotification("clockstarted")
-        this.button.textContent = "Stop"
+        this.button.classList.toggle("hidden")
         if (this.timeoutId) clearTimeout(this.timeoutId)
         this.timeoutId = setTimeout(() => {
             this.setClock(-9)
@@ -127,8 +132,10 @@ class Timer extends HTMLElement {
         clearTimeout(this.timeoutId)
         this.sendNotification("clockstopped")
         this.clock.textContent = ""
+        this.alarm.textContent = ""
         this.state = "stopped"
-        this.button.textContent = "Start"
+        this.button.classList.toggle("hidden")
+        this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
     }
 
@@ -137,7 +144,8 @@ class Timer extends HTMLElement {
         if (!(bell instanceof HTMLTemplateElement)) return
         let bellClone = bell.content.cloneNode(true)
         this.clock.textContent = ""
-        this.clock.appendChild(bellClone)
+        this.clock.classList.add('overlay')
+        this.alarm.appendChild(bellClone)
         this.restart.classList.remove('hidden')
     }
 
