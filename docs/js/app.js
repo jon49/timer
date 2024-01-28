@@ -85,8 +85,6 @@ class Timer extends HTMLElement {
             this.start()
         } else if (e.target === this.clock && this.state === "started") {
             e.preventDefault()
-            e.stopPropagation()
-            e.stopImmediatePropagation()
             this.state = "stopped"
             this.stop()
         } else if (e.target === this.restart) {
@@ -157,7 +155,7 @@ class Timer extends HTMLElement {
     }
 
     getTotalSeconds() {
-        return +this.hours.value * 3600 + +this.minutes.value * 60 + this.seconds.value
+        return +this.hours.value * 3600 + +this.minutes.value * 60 + +this.seconds.value
     }
 }
 
@@ -219,7 +217,7 @@ class TimerList extends HTMLElement {
         }
         window.requestAnimationFrame(() => {
             for (let t of this.activeTimers) {
-                t.timer.setClock(t.totalSeconds - Math.floor((Date.now() - t.startedAt) / 1000))
+                t.timer.setClock(t.totalSeconds - Math.floor((Date.now() - t.startedAt) / 1e3))
             }
         })
     }
