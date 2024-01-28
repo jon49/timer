@@ -15,30 +15,9 @@ class Timer extends HTMLElement {
     constructor(id, hours, minutes, seconds, title) {
         super()
         this.setAttribute("id", ""+id)
-        /** @type {HTMLInputElement} */
-        // @ts-ignore
-        this.hours = h('input', {
-            type: "number",
-            value: hours || null,
-            placeholder: 'Hrs',
-            style: "width:2.5em;",
-        })
-        /** @type {HTMLInputElement} */
-        // @ts-ignore
-        this.minutes = h('input', {
-            type: "number",
-            value: minutes || null,
-            placeholder: 'Min',
-            style: "width:2.5em;",
-        })
-        /** @type {HTMLInputElement} */
-        // @ts-ignore
-        this.seconds = h('input', {
-            type: "number",
-            value: seconds || null,
-            placeholder: 'Sec',
-            style: "width:2.5em;",
-        })
+        this.hours = clockInputView(hours, "Hrs")
+        this.minutes = clockInputView(minutes, "Min")
+        this.seconds = clockInputView(seconds, "Sec")
         /** @type {HTMLInputElement} */
         // @ts-ignore
         this._title = h("input", {
@@ -186,12 +165,9 @@ class TimerList extends HTMLElement {
         /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
         this.activeTimers = []
 
-        this.addEventListener('clockstarted', this)
-        this.addEventListener('clockstopped', this)
-        this.addEventListener('clockchanged', this)
-        this.addEventListener('click', this)
-        this.addEventListener('timerremoved', this)
-        this.addEventListener('timerexpired', this)
+        for (let event of ["clockstarted", "clockstopped", "clockchanged", "timerremoved", "timerexpired", "click"]) {
+            this.addEventListener(event, this)
+        }
 
         this.addTimer = h('button', {}, "Add Timer")
 
@@ -321,6 +297,22 @@ let timerEl = document.getElementById("timer")
 if (!timerEl) return
 
 timerEl.append(new TimerList())
+
+/**
+* @param {number | null} value
+* @param {string} placeholder
+* @returns {HTMLInputElement}
+*/
+function clockInputView(value, placeholder) {
+    value = value || null
+    // @ts-ignore
+    return h('input', {
+        type: "number",
+        value,
+        placeholder,
+        class: "clock-input"
+    })
+}
 
 /**
 * @param {string} tag 
