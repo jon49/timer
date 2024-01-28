@@ -60,18 +60,13 @@ class Timer extends HTMLElement {
     handleclick(e) {
         if (e.target === this.button && this.state === "stopped") {
             e.preventDefault()
-            this.state = "started"
             this.start()
         } else if (e.target === this.clock && this.state === "started") {
             e.preventDefault()
-            this.state = "stopped"
             this.stop()
         } else if (e.target === this.restart) {
             e.preventDefault()
-            this.stop()
-            this.clock.textContent = "00:00:00"
-            this.start()
-            this.state = "started"
+            this.restartClock()
         } else if (e.target === this.removeButton) {
             e.preventDefault()
             this.sendNotification("timerremoved")
@@ -83,9 +78,10 @@ class Timer extends HTMLElement {
     }
 
     /**
-    * @param {number} totalSeconds
+    * @param {number} [totalSeconds]
     */
     setClock(totalSeconds) {
+        totalSeconds ??= this.getTotalSeconds()
         if (totalSeconds === -9) {
             this.sendNotification("timerexpired")
         } else {
@@ -97,23 +93,37 @@ class Timer extends HTMLElement {
     }
 
     start() {
+        // Set defaults when in "started" state
+        this.button.classList.add("hidden")
+        this.alarm.textContent = ""
+        this.clock.classList.remove('overlay')
+        this.restart.classList.add('hidden')
+        this.setClock()
+        // Start timer
         this.sendNotification("clockstarted")
-        this.button.classList.toggle("hidden")
         if (this.timeoutId) clearTimeout(this.timeoutId)
         this.timeoutId = setTimeout(() => {
             this.setClock(-9)
-        }, +this.getTotalSeconds() * 1e3)
+        }, this.getTotalSeconds() * 1e3)
+        this.state = "started"
+    }
+
+    restartClock() {
+        this.sendNotification("clockstopped")
+        this.start()
     }
 
     stop() {
-        clearTimeout(this.timeoutId)
-        this.sendNotification("clockstopped")
+        // Set defaults when in "stopped" state
         this.clock.textContent = ""
         this.alarm.textContent = ""
-        this.state = "stopped"
-        this.button.classList.toggle("hidden")
+        this.button.classList.remove("hidden")
         this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
+        this.state = "stopped"
+        // Stop timer
+        clearTimeout(this.timeoutId)
+        this.sendNotification("clockstopped")
     }
 
     renderTimeExpired() {
