@@ -21,7 +21,7 @@ class Timer extends HTMLElement {
             type: "number",
             value: hours || null,
             placeholder: 'Hrs',
-            size: "3",
+            style: "width:2.5em;",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
@@ -29,7 +29,7 @@ class Timer extends HTMLElement {
             type: "number",
             value: minutes || null,
             placeholder: 'Min',
-            size: "3",
+            style: "width:2.5em;",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
@@ -37,7 +37,7 @@ class Timer extends HTMLElement {
             type: "number",
             value: seconds || null,
             placeholder: 'Sec',
-            size: "3",
+            style: "width:2.5em;",
         })
         /** @type {HTMLInputElement} */
         // @ts-ignore
