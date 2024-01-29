@@ -99,7 +99,6 @@ class Timer extends HTMLElement {
         this.setClock()
         // Start timer
         this.sendNotification("clockstarted")
-        if (this.timeoutId) clearTimeout(this.timeoutId)
         this.timeoutId = setTimeout(() => {
             this.sendNotification("timerexpired")
         }, this.getTotalSeconds() * 1e3)
