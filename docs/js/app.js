@@ -26,7 +26,7 @@ class Timer extends HTMLElement {
             value: title || null,
             placeholder: "Title",
         })
-        this.button = h('button', {}, "Start")
+        this.startButton = h('button', {}, "Start")
         this.removeButton = h('button', {}, "❌")
         this.restart = h('button', { class: 'hidden', html: '&#8635;' })
         this.clock = h('span', { class: "pointer", "aria-label": "Click to stop.", title: "Click to stop." })
@@ -40,7 +40,7 @@ class Timer extends HTMLElement {
                 h("span", { class: "editable-pencil", html: "&#9998;"}))),
             h("div", {}, 
                 this.hours, ":", this.minutes, ":", this.seconds, " — ",
-                this.clockContainer, this.button, this.restart, this.removeButton)
+                this.clockContainer, this.startButton, this.restart, this.removeButton)
         )
 
         this.addEventListener('click', this)
@@ -58,18 +58,20 @@ class Timer extends HTMLElement {
     * @param {MouseEvent} e
     */
     handleclick(e) {
-        if (e.target === this.button && this.state === "stopped") {
-            e.preventDefault()
-            this.start()
-        } else if (e.target === this.clock && this.state === "started") {
-            e.preventDefault()
-            this.stop()
-        } else if (e.target === this.restart) {
-            e.preventDefault()
-            this.restartClock()
-        } else if (e.target === this.removeButton) {
-            e.preventDefault()
-            this.sendNotification("timerremoved")
+        e.preventDefault()
+        switch (e.target) {
+            case this.startButton:
+                this.start()
+                break
+            case this.clock:
+                this.stop()
+                break
+            case this.restart:
+                this.restartClock()
+                break
+            case this.removeButton:
+                this.sendNotification("timerremoved")
+                break
         }
     }
 
@@ -82,19 +84,15 @@ class Timer extends HTMLElement {
     */
     setClock(totalSeconds) {
         totalSeconds ??= this.getTotalSeconds()
-        if (totalSeconds === -9) {
-            this.sendNotification("timerexpired")
-        } else {
-            let hours = formatTime(Math.floor(totalSeconds / 3600))
-            let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
-            let seconds = formatTime(totalSeconds % 60)
-            this.clock.textContent = `${hours}:${minutes}:${seconds}`
-        }
+        let hours = formatTime(Math.floor(totalSeconds / 3600))
+        let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
+        let seconds = formatTime(totalSeconds % 60)
+        this.clock.textContent = `${hours}:${minutes}:${seconds}`
     }
 
     start() {
         // Set defaults when in "started" state
-        this.button.classList.add("hidden")
+        this.startButton.classList.add("hidden")
         this.alarm.textContent = ""
         this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
@@ -103,7 +101,7 @@ class Timer extends HTMLElement {
         this.sendNotification("clockstarted")
         if (this.timeoutId) clearTimeout(this.timeoutId)
         this.timeoutId = setTimeout(() => {
-            this.setClock(-9)
+            this.sendNotification("timerexpired")
         }, this.getTotalSeconds() * 1e3)
         this.state = "started"
     }
@@ -117,7 +115,7 @@ class Timer extends HTMLElement {
         // Set defaults when in "stopped" state
         this.clock.textContent = ""
         this.alarm.textContent = ""
-        this.button.classList.remove("hidden")
+        this.startButton.classList.remove("hidden")
         this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
         this.state = "stopped"
@@ -127,12 +125,12 @@ class Timer extends HTMLElement {
     }
 
     renderTimeExpired() {
-        let bell = document.getElementById("bell")
-        if (!(bell instanceof HTMLTemplateElement)) return
-        let bellClone = bell.content.cloneNode(true)
+        let alarm = document.getElementById("bell")
+        if (!(alarm instanceof HTMLTemplateElement)) return
+        let alarmClone = alarm.content.cloneNode(true)
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
-        this.alarm.appendChild(bellClone)
+        this.alarm.appendChild(alarmClone)
         this.restart.classList.remove('hidden')
     }
 
@@ -140,7 +138,7 @@ class Timer extends HTMLElement {
     * @param {string} event
     */
     sendNotification(event) {
-        this.dispatchEvent(new CustomEvent(event, { detail: { timer: this }, bubbles: true, composed: true }))
+        this.dispatchEvent(new CustomEvent(event, { detail: { timer: this }, bubbles: true }))
     }
 
     getTotalSeconds() {
@@ -331,12 +329,13 @@ function clockInputView(value, placeholder) {
 */
 function h(tag, props = {}, ...children) {
     const el = document.createElement(tag)
-    for (const [k, v] of Object.entries(props)) {
+    for (let [k, v] of Object.entries(props)) {
         if (v == null) continue
+        v = "" + v
         if (k === "html") {
-            el.innerHTML = "" + v
+            el.innerHTML = v
         } else {
-            el.setAttribute(k, "" + v)
+            el.setAttribute(k, v)
         }
     }
     el.append(...children)
