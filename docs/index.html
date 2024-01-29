@@ -9,6 +9,7 @@
 * {
   box-sizing: border-box;
 }
+
 :root {
     --color-primary: #333;
     --color-secondary: lightblue;
@@ -16,6 +17,7 @@
     /* https://css-tricks.com/linearly-scale-font-size-with-css-clamp-based-on-the-viewport/ */
     --font-size: clamp(1rem, 0.1818rem + 3.6364vw, 2rem);
 }
+
 body {
   background-color: var(--color-primary);
   color: lightblue;
@@ -24,6 +26,7 @@ body {
   max-width: 800px;
   margin: 0 auto;
 }
+
 button {
     background-color: var(--color-tertiary);
     border: 1px solid lightblue;
@@ -34,6 +37,7 @@ button {
     margin: 0.25em;
     padding: 0.25em;
 }
+
 input {
     background-color: var(--color-tertiary);
     border: 1px solid var(--color-secondary);
@@ -43,6 +47,7 @@ input {
     margin: 0.25em;
     padding: 0.25em;
 }
+
 select {
     background-color: var(--color-tertiary);
     border: 1px solid var(--color-secondary);
@@ -52,12 +57,15 @@ select {
     margin: 0.25em;
     padding: 0.25em;
 }
+
 a:visited {
     color: var(--color-secondary);
 }
+
 .hidden {
     display: none;
 }
+
 input.plain:not(:focus) {
     border: none;
     background-color: transparent;
@@ -67,20 +75,25 @@ input.plain:not(:focus) {
     padding: 0;
     outline: none;
 }
+
 input.plain:focus + .editable-pencil {
     display: none;
 }
+
 .editable-pencil {
     display: inline-block;
     transform: rotate(90deg);
     cursor: pointer;
 }
+
 .pointer {
     cursor: pointer;
 }
+
 .relative-container {
     position: relative;
 }
+
 .overlay {
     position: absolute;
     top: -1em;
@@ -90,8 +103,23 @@ input.plain:focus + .editable-pencil {
     z-index: 99;
     cursor: pointer;
 }
+
 .clock-input {
     width: 2.5em;
+}
+
+dialog.modal {
+    background-color: var(--color-tertiary);
+    color: lightblue;
+    border-radius: 0.5em;
+    padding: 1em;
+    width: 100%;
+    max-width: 800px;
+    overflow: auto;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 </style>
     </head>
@@ -185,6 +213,7 @@ input.plain:focus + .editable-pencil {
         </template>
 
         <script src="./js/app.js"></script>
+        <script src="./js/x-dialog.js"></script>
 
     </body>
 </html>
