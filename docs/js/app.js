@@ -124,9 +124,8 @@ class Timer extends HTMLElement {
     }
 
     renderTimeExpired() {
-        let alarm = document.getElementById("bell")
-        if (!(alarm instanceof HTMLTemplateElement)) return
-        let alarmClone = alarm.content.cloneNode(true)
+        let alarmClone = getAlarm()
+        if (!alarmClone) return
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
         this.alarm.appendChild(alarmClone)
@@ -143,6 +142,15 @@ class Timer extends HTMLElement {
     getTotalSeconds() {
         return +this.hours.value * 3600 + +this.minutes.value * 60 + +this.seconds.value
     }
+}
+
+let lastAlarmIndex = -1
+let alarmIds = ["bell", "warfare", "fire-truck", "air-raid", "song"]
+function getAlarm() {
+    lastAlarmIndex = (lastAlarmIndex + 1) % alarmIds.length
+    let alarm = document.getElementById(alarmIds[lastAlarmIndex])
+    if (!(alarm instanceof HTMLTemplateElement)) return
+    return alarm.content.cloneNode(true)
 }
 
 /**
