@@ -74,21 +74,25 @@ class Timer extends HTMLElement {
     * @param {MouseEvent} e
     */
     handleclick(e) {
-        e.preventDefault()
         switch (e.target) {
             case this.startButton:
+                e.preventDefault()
                 this.start()
                 break
             case this.clock:
+                e.preventDefault()
                 this.stop()
                 break
             case this.restart:
+                e.preventDefault()
                 this.restartClock()
                 break
             case this.removeButton:
+                e.preventDefault()
                 this.sendNotification("timerremoved")
                 break
             case this.optionsButton:
+                e.preventDefault()
                 this.showOptions()
                 break
         }
