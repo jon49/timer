@@ -2,6 +2,8 @@
 
 (() => {
 
+let sound = "random"
+
 class Timer extends HTMLElement {
     /** @type {"stopped" | "started"} */
     state = "stopped"
@@ -124,7 +126,7 @@ class Timer extends HTMLElement {
     }
 
     renderTimeExpired() {
-        let alarmClone = getAlarm()
+        let alarmClone = getAlarm(sound)
         if (!alarmClone) return
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
@@ -142,15 +144,6 @@ class Timer extends HTMLElement {
     getTotalSeconds() {
         return +this.hours.value * 3600 + +this.minutes.value * 60 + +this.seconds.value
     }
-}
-
-let lastAlarmIndex = -1
-let alarmIds = ["bell", "warfare", "fire-truck", "air-raid", "song"]
-function getAlarm() {
-    lastAlarmIndex = (lastAlarmIndex + 1) % alarmIds.length
-    let alarm = document.getElementById(alarmIds[lastAlarmIndex])
-    if (!(alarm instanceof HTMLTemplateElement)) return
-    return alarm.content.cloneNode(true)
 }
 
 /**
@@ -175,20 +168,48 @@ class TimerList extends HTMLElement {
 
     constructor() {
         super()
-        /** @type {TimerData[]} */
-        this.timers = JSON.parse(localStorage.getItem("timers") || "[]")
+        /** @type {{ sound: string, timers: TimerData[]}} */
+        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","timers":[]"}`)
+        if (Array.isArray(this.data)) {
+            this.data = { sound: "random", timers: this.data }
+        }
+        this.timers = this.data.timers
+        sound = this.data.sound
         /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
         this.activeTimers = []
 
-        for (let event of ["clockstarted", "clockstopped", "clockchanged", "timerremoved", "timerexpired", "click"]) {
+        for (let event of [
+            "clockstarted",
+            "clockstopped",
+            "clockchanged",
+            "timerremoved",
+            "timerexpired",
+            "change",
+            "click"]) {
             this.addEventListener(event, this)
         }
 
         this.addTimer = h('button', {}, "Add Timer")
 
+        /** @type {HTMLSelectElement} */
+        // @ts-ignore
+        this.sound =
+            h("select", { id: "sound" },
+                h("option", { value: "random" }, "Random"),
+                h("option", { value: "bell" }, "Bell"),
+                h("option", { value: "warfare" }, "Warfare"),
+                h("option", { value: "fire-truck" }, "Fire Truck"),
+                h("option", { value: "air-raid" }, "Air Raid"),
+                h("option", { value: "song" }, "Song")
+            )
+
         this.append(...this.timers.map(t =>
             h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title))),
-            h('div', {}, this.addTimer))
+            h("br"),
+            h('div', {}, this.addTimer),
+            h("br"),
+            h("div", {}, h("label", {}, "Sound", h("br"), this.sound))
+        )
     }
 
     tick() {
@@ -218,6 +239,16 @@ class TimerList extends HTMLElement {
     */
     handleEvent(e) {
         this[`handle${e.type}`](e)
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handlechange(e) {
+        if (this.sound === e.target) {
+            sound = this.data.sound = this.sound.value
+            this.save()
+        }
     }
 
     /**
@@ -302,7 +333,7 @@ class TimerList extends HTMLElement {
     }
 
     save() {
-        localStorage.setItem("timers", JSON.stringify(this.timers))
+        localStorage.setItem("timers", JSON.stringify(this.data))
     }
 }
 
@@ -312,6 +343,20 @@ let timerEl = document.getElementById("timer")
 if (!timerEl) return
 
 timerEl.append(new TimerList())
+
+let alarmIds = ["bell", "warfare", "fire-truck", "air-raid", "song"]
+/**
+* @param {string} sound
+*/
+function getAlarm(sound) {
+    if (sound === "random") return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
+    let alarm = document.getElementById(sound)
+    if (!(alarm instanceof HTMLTemplateElement)) {
+        console.error(`Alarm with id ${sound} not found`)
+        return
+    }
+    return alarm.content.cloneNode(true)
+}
 
 /**
 * @param {number | null} value
