@@ -109,7 +109,7 @@ class Timer extends HTMLElement {
     }
 
     showOptions() {
-        let defaultSound = this.sound || sound
+        let defaultSound = this.sound || "default"
         /** @type {HTMLSelectElement} */
         // @ts-ignore
         this.soundSelect =
