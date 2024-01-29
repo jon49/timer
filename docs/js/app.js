@@ -124,10 +124,9 @@ class Timer extends HTMLElement {
                     ].map(([value, text]) =>
                         h("option", { value, selected: defaultSound === value }, text)))
 
-        /** @type {HTMLDialogElement} */
-        // @ts-ignore
-        let dialog =
-            h("dialog", { class: "modal", is: "x-dialog" },
+        document.body.append(
+            h("x-dialog", {},
+            h("dialog", { class: "modal" },
                 h("div", {},
                 h("h1", { class: "inline" }, "Options"),
                 h("form", { class: "inline", method: "dialog" },
@@ -137,9 +136,8 @@ class Timer extends HTMLElement {
                 h("br"),
                 // @ts-ignore
                 this.soundSelect
-            ))
-        document.body.append(dialog)
-        dialog.showModal()
+            )))
+        )
     }
 
     /**

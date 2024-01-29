@@ -1,7 +1,9 @@
 // @ts-check
 (() => {
-class XDialog extends HTMLDialogElement {
-    constructor() { super() }
+class XDialog extends HTMLElement {
+    constructor() {
+        super()
+    }
 
     connectedCallback() {
         if (this.children.length) {
@@ -18,50 +20,53 @@ class XDialog extends HTMLDialogElement {
         this.observer?.disconnect()
         this.observer = null
 
-        if (this.hasAttribute("show-modal") && !this.open) {
-            this.showModal()
-        }
+        this.dialog = this.querySelector("dialog")
+        if (!(this.dialog instanceof HTMLDialogElement)) return
+
+        this.dialog.showModal()
 
         this.hasDisposed = false
         let closeEvent = this.closeEvent = this.getAttribute("close-event")
         if (closeEvent) {
-            this.addEventListener(closeEvent, this.dispose.bind(this))
+            this.addEventListener(closeEvent, this)
         }
-        this.addEventListener("close", this.dispose.bind(this))
-        this.addEventListener("click", this.outsideClickClose.bind(this))
+        this.addEventListener("close", this)
+        this.addEventListener("click", this)
+    }
+
+    /** @param {Event} e */
+    handleEvent(e) {
+        if (e.type === this.closeEvent) {
+            this.dialog?.close()
+            this.remove()
+            return
+        }
+        this[`handle${e.type}`](e)
     }
 
     /** @param {MouseEvent} e */
-    outsideClickClose(e) {
-        if (this?.open) {
-            const dialogDimensions = this.getBoundingClientRect()
+    handleclick(e) {
+        if (this.dialog?.open) {
+            const dialogDimensions = this.dialog.getBoundingClientRect()
+            if (!(e.target instanceof HTMLDialogElement) && e.target instanceof HTMLElement) {
+                if (e.target.closest("dialog") === this.dialog) return
+            }
             if (  e.clientX < dialogDimensions.left
                || e.clientX > dialogDimensions.right
                || e.clientY < dialogDimensions.top
                || e.clientY > dialogDimensions.bottom ) {
-                this.close()
+                this.dialog.close()
+                this.remove()
             }
         }
     }
 
-    dispose() {
-        if (this.hasDisposed) return
-        if (this?.open) {
-            this.close()
-        }
+    handleclose() {
         this.remove()
-        this.hasDisposed = true
-    }
-
-    disconnectedCallback() {
-        if (this.closeEvent) {
-            this?.removeEventListener(this.closeEvent, this.dispose.bind(this))
-        }
-        this?.removeEventListener("close", this.dispose.bind(this))
-        this?.removeEventListener("click", this.outsideClickClose.bind(this))
     }
 }
 
-customElements.define("x-dialog", XDialog, { extends: "dialog" })
+customElements.define("x-dialog", XDialog)
+
 })()
 
