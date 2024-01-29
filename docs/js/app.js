@@ -200,7 +200,9 @@ class TimerList extends HTMLElement {
                     ["air-raid", "Air Raid"],
                     ["bell", "Bell"],
                     ["fire-truck", "Fire Truck"],
+                    ["kyrie", "Kyrie eleison"],
                     ["song", "Song"],
+                    ["tibetan", "Tibetan Meditation"],
                     ["warfare", "Warfare"],
                 ].map(([value, text]) =>
                     h("option", { value, selected: sound === value }, text)))
