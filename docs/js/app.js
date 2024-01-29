@@ -195,12 +195,12 @@ class TimerList extends HTMLElement {
         // @ts-ignore
         this.sound =
             h("select", { id: "sound" },
-                h("option", { value: "random" }, "Random"),
-                h("option", { value: "bell" }, "Bell"),
-                h("option", { value: "warfare" }, "Warfare"),
-                h("option", { value: "fire-truck" }, "Fire Truck"),
-                h("option", { value: "air-raid" }, "Air Raid"),
-                h("option", { value: "song" }, "Song")
+                h("option", { value: "random", selected: sound === "random" }, "Random"),
+                h("option", { value: "bell", selected: sound === "bell" }, "Bell"),
+                h("option", { value: "warfare", selected: sound === "warfare" }, "Warfare"),
+                h("option", { value: "fire-truck", selected: sound === "fire-truck" }, "Fire Truck"),
+                h("option", { value: "air-raid", selected: sound === "air-raid" }, "Air Raid"),
+                h("option", { value: "song", selected: sound === "song" }, "Song")
             )
 
         this.append(...this.timers.map(t =>
@@ -376,13 +376,13 @@ function clockInputView(value, placeholder) {
 
 /**
 * @param {string} tag 
-* @param {Record<string, string | number | null>} props
+* @param {Record<string, string | number | boolean | null>} props
 * @param {(string | Node)[]} children
 */
 function h(tag, props = {}, ...children) {
     const el = document.createElement(tag)
     for (let [k, v] of Object.entries(props)) {
-        if (v == null) continue
+        if (v == null || v === false) continue
         v = "" + v
         if (k === "html") {
             el.innerHTML = v
