@@ -3,6 +3,17 @@
 (() => {
 
 let sound = "random"
+let soundOptions = [
+    ["random", "Random"],
+    ["air-raid", "Air Raid"],
+    ["bell", "Bell"],
+    ["fire-truck", "Fire Truck"],
+    ["kyrie", "Kyrie eleison"],
+    ["song", "Song"],
+    ["tibetan", "Tibetan"],
+    ["warfare", "Warfare"],
+]
+
 
 class Timer extends HTMLElement {
     /** @type {"stopped" | "started"} */
@@ -13,13 +24,15 @@ class Timer extends HTMLElement {
     * @param {number} minutes
     * @param {number} seconds
     * @param {string} title
+    * @param {string | null | undefined} sound
     */
-    constructor(id, hours, minutes, seconds, title) {
+    constructor(id, hours, minutes, seconds, title, sound) {
         super()
         this.setAttribute("id", ""+id)
         this.hours = clockInputView(hours, "Hrs")
         this.minutes = clockInputView(minutes, "Min")
         this.seconds = clockInputView(seconds, "Sec")
+        this.sound = sound
         /** @type {HTMLInputElement} */
         // @ts-ignore
         this._title = h("input", {
@@ -33,6 +46,7 @@ class Timer extends HTMLElement {
         this.restart = h('button', { class: 'hidden', html: '&#8635;' })
         this.clock = h('span', { class: "pointer", "aria-label": "Click to stop.", title: "Click to stop." })
         this.alarm = h("span")
+        this.optionsButton = h("button", { html: "&#9881;" })
         this.clockContainer = h('span', { class: "relative-container" },
             this.clock, this.alarm)
         this.append(
@@ -42,7 +56,7 @@ class Timer extends HTMLElement {
                 h("span", { class: "editable-pencil", html: "&#9998;"}))),
             h("div", {}, 
                 this.hours, ":", this.minutes, ":", this.seconds, " — ",
-                this.clockContainer, this.startButton, this.restart, this.removeButton)
+                this.clockContainer, this.startButton, this.restart, this.optionsButton, this.removeButton)
         )
 
         this.addEventListener('click', this)
@@ -74,11 +88,54 @@ class Timer extends HTMLElement {
             case this.removeButton:
                 this.sendNotification("timerremoved")
                 break
+            case this.optionsButton:
+                this.showOptions()
+                break
         }
     }
 
     handlechange() {
-        this.sendNotification("clockchanged")
+        if (this.soundSelect) {
+            this.sound = this.soundSelect.value
+            if (this.sound === "default") {
+                this.sound = null
+            }
+        }
+        this.save()
+    }
+
+    save() {
+        this.sendNotification("save")
+    }
+
+    showOptions() {
+        let defaultSound = this.sound || sound
+        /** @type {HTMLSelectElement} */
+        // @ts-ignore
+        this.soundSelect =
+                h("select", { onchange: this },
+                    ...[
+                        ["default", "Default"],
+                        ...soundOptions
+                    ].map(([value, text]) =>
+                        h("option", { value, selected: defaultSound === value }, text)))
+
+        /** @type {HTMLDialogElement} */
+        // @ts-ignore
+        let dialog =
+            h("dialog", { class: "modal", is: "x-dialog" },
+                h("div", {},
+                h("h1", { class: "inline" }, "Options"),
+                h("form", { class: "inline", method: "dialog" },
+                    h("button", { value: "cancel" }, "Close")),
+                ),
+                h("label", {}, "Sound",
+                h("br"),
+                // @ts-ignore
+                this.soundSelect
+            ))
+        document.body.append(dialog)
+        dialog.showModal()
     }
 
     /**
@@ -126,7 +183,7 @@ class Timer extends HTMLElement {
     }
 
     renderTimeExpired() {
-        let alarmClone = getAlarm(sound)
+        let alarmClone = getAlarm(this.sound || sound)
         if (!alarmClone) return
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
@@ -162,6 +219,7 @@ customElements.define("x-timer", Timer)
 * @property {number} minutes
 * @property {number} seconds
 * @property {string} title
+* @property {string | null | undefined} sound
 */
 
 class TimerList extends HTMLElement {
@@ -181,7 +239,7 @@ class TimerList extends HTMLElement {
         for (let event of [
             "clockstarted",
             "clockstopped",
-            "clockchanged",
+            "save",
             "timerremoved",
             "timerexpired",
             "change",
@@ -195,22 +253,13 @@ class TimerList extends HTMLElement {
         // @ts-ignore
         this.sound =
             h("select", {},
-                ...[
-                    ["random", "Random"],
-                    ["air-raid", "Air Raid"],
-                    ["bell", "Bell"],
-                    ["fire-truck", "Fire Truck"],
-                    ["kyrie", "Kyrie eleison"],
-                    ["song", "Song"],
-                    ["tibetan", "Tibetan Meditation"],
-                    ["warfare", "Warfare"],
-                ].map(([value, text]) =>
+                ...soundOptions.map(([value, text]) =>
                     h("option", { value, selected: sound === value }, text)))
 
         this.timerList =
             h("div", {},
                 ...this.timers.map(t =>
-                    h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title))))
+                    h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title, t.sound))))
 
         this.append(
             this.timerList,
@@ -275,8 +324,8 @@ class TimerList extends HTMLElement {
     handleclick(e) {
         if (e.target !== this.addTimer) return
         let id = Math.max(...this.timers.map(t => t.id), 0) + 1
-        let timer = new Timer(id, 0, 0, 0, "")
-        this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "" })
+        let timer = new Timer(id, 0, 0, 0, "", null)
+        this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
         this.timerList.append(h("div", {}, timer))
         this.save()
     }
@@ -315,7 +364,7 @@ class TimerList extends HTMLElement {
     /**
     * @param {CustomEvent} e
     */
-    handleclockchanged(e) {
+    handlesave(e) {
         /** @type {Timer} */
         let timer = e.detail.timer
         let id = +timer.id
@@ -325,6 +374,7 @@ class TimerList extends HTMLElement {
         data.minutes = +timer.minutes.value
         data.seconds = +timer.seconds.value
         data.title = timer._title.value
+        data.sound = timer.sound
         this.save()
     }
 
@@ -385,13 +435,17 @@ function clockInputView(value, placeholder) {
 
 /**
 * @param {string} tag 
-* @param {Record<string, string | number | boolean | null>} props
+* @param {Record<string, string | number | boolean | Object | ((event: Event) => void)  | null>} props
 * @param {(string | Node)[]} children
 */
 function h(tag, props = {}, ...children) {
     const el = document.createElement(tag)
     for (let [k, v] of Object.entries(props)) {
         if (v == null || v === false) continue
+        if (v instanceof Function || v instanceof Object) {
+            el.addEventListener(k.slice(2), v)
+            continue
+        }
         v = "" + v
         if (k === "html") {
             el.innerHTML = v
