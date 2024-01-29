@@ -194,17 +194,24 @@ class TimerList extends HTMLElement {
         /** @type {HTMLSelectElement} */
         // @ts-ignore
         this.sound =
-            h("select", { id: "sound" },
-                h("option", { value: "random", selected: sound === "random" }, "Random"),
-                h("option", { value: "bell", selected: sound === "bell" }, "Bell"),
-                h("option", { value: "warfare", selected: sound === "warfare" }, "Warfare"),
-                h("option", { value: "fire-truck", selected: sound === "fire-truck" }, "Fire Truck"),
-                h("option", { value: "air-raid", selected: sound === "air-raid" }, "Air Raid"),
-                h("option", { value: "song", selected: sound === "song" }, "Song")
-            )
+            h("select", {},
+                ...[
+                    ["random", "Random"],
+                    ["air-raid", "Air Raid"],
+                    ["bell", "Bell"],
+                    ["fire-truck", "Fire Truck"],
+                    ["song", "Song"],
+                    ["warfare", "Warfare"],
+                ].map(([value, text]) =>
+                    h("option", { value, selected: sound === value }, text)))
 
-        this.append(...this.timers.map(t =>
-            h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title))),
+        this.timerList =
+            h("div", {},
+                ...this.timers.map(t =>
+                    h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title))))
+
+        this.append(
+            this.timerList,
             h("br"),
             h('div', {}, this.addTimer),
             h("br"),
@@ -268,7 +275,7 @@ class TimerList extends HTMLElement {
         let id = Math.max(...this.timers.map(t => t.id), 0) + 1
         let timer = new Timer(id, 0, 0, 0, "")
         this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "" })
-        this.insertBefore(h("div", {}, timer), this.addTimer.parentElement)
+        this.timerList.append(h("div", {}, timer))
         this.save()
     }
 
