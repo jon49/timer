@@ -169,7 +169,7 @@ class TimerList extends HTMLElement {
     constructor() {
         super()
         /** @type {{ sound: string, timers: TimerData[]}} */
-        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","timers":[]"}`)
+        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","timers":[]}`)
         if (Array.isArray(this.data)) {
             this.data = { sound: "random", timers: this.data }
         }
