@@ -14,7 +14,6 @@ let soundOptions = [
     ["warfare", "Warfare"],
 ]
 
-
 class Timer extends HTMLElement {
     /** @type {"stopped" | "started"} */
     state = "stopped"
@@ -230,9 +229,6 @@ class TimerList extends HTMLElement {
         super()
         /** @type {{ sound: string, timers: TimerData[]}} */
         this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","timers":[]}`)
-        if (Array.isArray(this.data)) {
-            this.data = { sound: "random", timers: this.data }
-        }
         this.timers = this.data.timers
         sound = this.data.sound
         /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
