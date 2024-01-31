@@ -1,89 +1,178 @@
 import * as vanX from "vanjs-ext"
 import van, { State } from "vanjs-core"
 
-const { div, input, button, span, html } = van.tags
+const { div, input, button, span, br, label, select, option, dialog, h2, form } = van.tags
+
+interface TimerInfo {
+    sound: string
+    timers: TimerData[]
+}
 
 interface TimerData {
     id: number
     hours: number
     minutes: number
     seconds: number
-    notes: string
+    title: string
+    sound: string | null | undefined
 }
-
-const appStateKey = "appState"
 
 type TimerState = "running" | "stopped" | "alarm"
 
+const appStateKey = "appState"
+let sound = "random"
+let soundOptions = [
+    ["random", "Random"],
+    ["air-raid", "Air Raid"],
+    ["bell", "Bell"],
+    ["fire-truck", "Fire Truck"],
+    ["kyrie", "Kyrie eleison"],
+    ["song", "Song"],
+    ["tibetan", "Tibetan"],
+    ["warfare", "Warfare"],
+]
+
 function App() {
-    const items =
-        <TimerData[]>vanX.reactive(
-            JSON.parse(localStorage.getItem(appStateKey) ?? "[]")
-            .filter((x: any) => x))
+    let rawData = JSON.parse(localStorage.getItem(appStateKey) ?? `{"sound":"random","timers":[]}`)
+    const data = <TimerInfo>vanX.reactive({ sound: rawData.sound || "random", timers: rawData.timers.filter((x: any) => x) })
+    sound = data.sound
+    let timers = data.timers
     van.derive(() => {
-        let json = JSON.stringify(items.filter(x => x))
+        let json = JSON.stringify({ sound: data.sound, timers: timers.filter(x => x) } as TimerInfo)
         console.log("saving", json)
         localStorage.setItem(appStateKey, json)
     })
 
     return [
-    vanX.list(div, <any>items, ({val: v}: State<TimerData>) => {
-        let { hours, minutes, seconds } = v
+    vanX.list(div, <any>timers, ({val: timer}: State<TimerData>) => {
+        let { hours, minutes, seconds } = timer
         let secondsLeft = van.state(0)
         let state: State<TimerState> = van.state("stopped")
         return div(
-            input({
-                type: "number",
-                value: hours || "",
-                placeholder: "Hrs", size: 3,
-                onchange: (e: any) => v.hours = +(e.target?.value || 0)}),
-            ":", input({
-                    type: "number",
-                    value: minutes || "",
-                    placeholder: "Min", size: 3,
-                    onchange: (e: any) => v.minutes = +(e.target?.value || 0)}),
-            ":", input({
-                type: "number",
-                value: seconds || "",
-                placeholder: "Sec", size: 3,
-                onchange: (e: any) => v.seconds = +(e.target?.value || 0)}), " — ",
-            span(userFeedbackView(secondsLeft, state)),
-            button({onclick: () => {
-                switch (state.val) {
-                    case "running":
-                        state.val = "stopped"
-                        stopTimer(v.id)
-                        break
-                    case "stopped":
-                        state.val = "running"
-                        handleStartTimer(v, secondsLeft, state)
-                        break
-                    case "alarm":
-                        state.val = "stopped"
-                        break
+            numberInputView(hours, "Hrs", (e: any) => timer.hours = +(e.target?.value || 0)),
+            ":", numberInputView(minutes, "Min", (e: any) => timer.minutes = +(e.target?.value || 0)),
+            ":", numberInputView(seconds, "Sec", (e: any) => timer.seconds = +(e.target?.value || 0)), " — ",
+            clockView(timer, secondsLeft, state),
+            button({
+                class: () => state.val === "stopped" ? "" : "hidden",
+                onclick: () => {
+                    state.val = "running"
+                    handleStartTimer(timer, secondsLeft, state)
                 }
-            }}, () => state.val === "stopped" ? "Start" : "Stop"),
+            }, "Start"),
             button({onclick: () => {
                 state.val = "running"
-                handleStartTimer(v, secondsLeft, state)
+                handleStartTimer(timer, secondsLeft, state)
             }, innerHTML:  "&#8635;", class: () => state.val === "alarm" ? "" : "hidden"}),
+            button({
+                innerHTML: "&#9881;",
+                onclick: showTimerOptions(timer) }),
             button({onclick: () => {
-                let index = items.findIndex(x => x.id === v.id)
+                let index = timers.findIndex(x => x.id === timer.id)
                 if (index >= 0) {
-                    items.splice(index, 1)
+                    timers.splice(index, 1)
                 }
             }
             }, "❌"),
         )}),
 
-        div(button({onclick: () => items.push({
-            id: createId(items),
+        br(),
+
+        div(button({onclick: () => timers.push({
+            id: createId(timers),
             hours: 0,
             minutes: 0,
             seconds: 0,
-            notes: "",
+            title: "",
+            sound: null,
         })}, "Add Timer")),
+
+        br(),
+
+        div(label("Sound"), br(), select(
+            { onchange: (e: any) => sound = data.sound = e.target.value },
+            soundOptions.map(([value, label]) =>
+                             option({ value, selected: value === sound }, label))
+        ))
     ]
+}
+
+function numberInputView(value: number, placeholder: string, onchange: (value: Event) => void) {
+    return input({
+        type: "number",
+        value: value || "",
+        placeholder: placeholder,
+        size: 3,
+        onchange,
+    })
+}
+
+function clockView(timer: TimerData, secondsLeft: State<number>, state: State<TimerState>) {
+    let clock = 
+        span({
+            class: () => 
+                state.val === "alarm"
+                    ? "pointer overlay"
+                : "pointer",
+            title: "Click to stop.",
+            "aria-label": "Click to stop.",
+            onclick: () => {
+                state.val = "stopped"
+                stopTimer(timer.id)
+            }
+        }, () => {
+            let val = secondsLeft.val
+            if (state.val === "running") {
+                let hours = formatTime(Math.floor(val / 3600))
+                let minutes = formatTime(Math.floor(val / 60) % 60)
+                let seconds = formatTime(val % 60)
+                return `${hours}:${minutes}:${seconds}`
+            }
+            return ""
+        })
+
+    return span({ class: "relative-container" },
+        clock,
+        span(() => {
+                if (state.val === "alarm") {
+                    return span(getAlarm(timer.sound ?? sound))
+                } else {
+                    return ""
+                }
+            }
+        ),
+    )
+}
+
+function showTimerOptions(timer: TimerData) {
+    return () => {
+        let xDialog = document.createElement("x-dialog")
+        van.add(xDialog, dialog( { class: "modal" },
+            div(
+                h2({ class: "inline" }, "Options"),
+                form({ class: "inline", method: "dialog" },
+                    button({ value: "cancel" }, "Close"))
+            ),
+            label("Sound", br(),
+                  select({ onchange: (e: any) => {
+                      timer.sound = e.target.value
+                  }},
+                  option({ value: "default", selected: timer.sound == null }, "Default"),
+                  soundOptions.map(([value, label]) => option({ value, selected: value === timer.sound }, label))
+            ))
+        ))
+        document.body.appendChild(xDialog)
+    }
+}
+
+let alarmIds = soundOptions.map(([value]) => value)
+function getAlarm(sound: string) {
+    if (sound === "random") return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
+    let alarm = document.getElementById(sound)
+    if (!(alarm instanceof HTMLTemplateElement)) {
+        return
+    }
+    return alarm.content.cloneNode(true)
 }
 
 function createId(items: TimerData[]) {
@@ -98,16 +187,21 @@ if (!timerEl) {
     van.add(timerEl, App())
 }
 
-let activeTimers: Record<string, { id: number, fn: (timeLeft: number) => void, startedAt: number, totalSeconds: number }> = {}
+let activeTimers: Record<string, { id: number, fn: (timeLeft: number) => void, startedAt: number, totalSeconds: number, timeoutId: number }> = {}
 let interval: number | null = null
 function startTimer(timer: TimerData, fn: (timeLeft: number) => void, timerStopped: (timerId: number) => void) {
     let totalSeconds = getTotalSeconds(timer)
     let startedAt = Date.now()/1e3
-    activeTimers[timer.id] = { fn, startedAt, totalSeconds, id: timer.id }
-    setTimeout(() => {
-        stopTimer(timer.id)
-        timerStopped(timer.id)
-    }, totalSeconds * 1e3)
+    activeTimers[timer.id] = {
+        fn,
+        startedAt,
+        totalSeconds,
+        id: timer.id,
+        timeoutId: setTimeout(() => {
+            stopTimer(timer.id)
+            timerStopped(timer.id)
+        }, totalSeconds * 1e3)
+    }
     tick()
 }
 
@@ -117,13 +211,15 @@ function tick() {
         let now = Date.now()/1e3
         for (let timer of Object.values(activeTimers)) {
             let elapsed = now - timer.startedAt
-            let timeLeft = timer.totalSeconds - elapsed
+            let timeLeft = Math.round(timer.totalSeconds - elapsed)
             timer.fn(timeLeft)
         }
     }, 1e3)
 }
 
 function stopTimer(timerId: number) {
+    if (!activeTimers[timerId]) return
+    clearTimeout(activeTimers[timerId].timeoutId)
     delete activeTimers[timerId]
     if (Object.keys(activeTimers).length === 0 && interval) {
         clearInterval(interval)
@@ -137,27 +233,6 @@ function handleStartTimer(timer: TimerData, secondsLeft: State<number>, timerSta
         timerState.val = "alarm"
         stopTimer(timerId)
     })
-}
-
-function userFeedbackView(secondsLeft: State<number>, state: State<TimerState>) {
-    return () => {
-        let val = secondsLeft.val | 0
-
-        switch (state.val) {
-            case "alarm":
-                let bell = document.getElementById("bell")
-                if (!(bell instanceof HTMLTemplateElement)) return "ALARM"
-                let bellClone = bell.content.cloneNode(true)
-                return span(bellClone)
-            case "stopped":
-                return ""
-            case "running":
-                let hours = formatTime(Math.floor(val / 3600))
-                let minutes = formatTime(Math.floor(val / 60) % 60)
-                let seconds = formatTime(val % 60)
-                return `${hours}:${minutes}:${seconds}`
-        }
-    }
 }
 
 function getTotalSeconds(timer: TimerData) {
