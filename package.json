@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "start": "npx serve docs",
-    "start:van": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app-van.js --servedir=docs --watch",
-    "build:van": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app-van.js --minify"
+    "start": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app.js --servedir=docs --watch",
+    "start:ce": "npx serve docs",
+    "build": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app.js --minify"
   },
   "dependencies": {
     "serve": "^14.2.1",
