@@ -39,17 +39,16 @@ function App() {
     sound = data.sound
     let timers = data.timers
     van.derive(() => {
-        let o: TimerInfo = {
-            sound: data.sound,
-            timers: timers
-                .filter(x => x)
-                .map(x => ({ ...x }))
-        }
         if (start) {
             start = false
-            return
+            return {
+                sound: data.sound,
+                timers: timers
+                    .filter(x => x)
+                    .map(x => ({ ...x }))
+            }
         }
-        let json = JSON.stringify(o)
+        let json = JSON.stringify(data)
         console.log("saving")
         localStorage.setItem(appStateKey, json)
     })
