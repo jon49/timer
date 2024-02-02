@@ -19,7 +19,7 @@ interface TimerData {
 
 type TimerState = "running" | "stopped" | "alarm"
 
-const appStateKey = "appState"
+const appStateKey = "timers"
 let sound = "random"
 let soundOptions = [
     ["random", "Random"],
@@ -60,32 +60,45 @@ function App() {
         let secondsLeft = van.state(0)
         let state: State<TimerState> = van.state("stopped")
         return div(
-            numberInputView(hours, "Hrs", (e: any) => timer.hours = +(e.target?.value || 0)),
-            ":", numberInputView(minutes, "Min", (e: any) => timer.minutes = +(e.target?.value || 0)),
-            ":", numberInputView(seconds, "Sec", (e: any) => timer.seconds = +(e.target?.value || 0)), " — ",
-            clockView(timer, secondsLeft, state),
-            button({
-                class: () => state.val === "stopped" ? "" : "hidden",
-                onclick: () => {
+            div(
+                label(
+                    input({
+                        class: "plain",
+                        type: "text",
+                        value: timer.title || null,
+                        placeholder: "Title",
+                        onchange: (e: any) => timer.title = e.target.value
+                    }),
+                    span({ class: "editable-pencil", innerHTML: "&#9998;" })
+                ),
+            ),
+            div(
+                numberInputView(hours, "Hrs", (e: any) => timer.hours = +(e.target?.value || 0)),
+                ":", numberInputView(minutes, "Min", (e: any) => timer.minutes = +(e.target?.value || 0)),
+                ":", numberInputView(seconds, "Sec", (e: any) => timer.seconds = +(e.target?.value || 0)), " — ",
+                clockView(timer, secondsLeft, state),
+                button({
+                    class: () => state.val === "stopped" ? "" : "hidden",
+                    onclick: () => {
+                        state.val = "running"
+                        handleStartTimer(timer, secondsLeft, state)
+                    }
+                }, "Start"),
+                button({onclick: () => {
                     state.val = "running"
                     handleStartTimer(timer, secondsLeft, state)
+                }, innerHTML:  "&#8635;", class: () => state.val === "alarm" ? "" : "hidden"}),
+                button({
+                    innerHTML: "&#9881;",
+                    onclick: showTimerOptions(timer) }),
+                button({onclick: () => {
+                    let index = timers.findIndex(x => x.id === timer.id)
+                    if (index >= 0) {
+                        timers.splice(index, 1)
+                    }
                 }
-            }, "Start"),
-            button({onclick: () => {
-                state.val = "running"
-                handleStartTimer(timer, secondsLeft, state)
-            }, innerHTML:  "&#8635;", class: () => state.val === "alarm" ? "" : "hidden"}),
-            button({
-                innerHTML: "&#9881;",
-                onclick: showTimerOptions(timer) }),
-            button({onclick: () => {
-                let index = timers.findIndex(x => x.id === timer.id)
-                if (index >= 0) {
-                    timers.splice(index, 1)
-                }
-            }
-            }, "❌"),
-        )}),
+                }, "❌"),
+        ))}),
 
         br(),
 
@@ -110,10 +123,10 @@ function App() {
 
 function numberInputView(value: number, placeholder: string, onchange: (value: Event) => void) {
     return input({
+        class: "clock-input",
         type: "number",
         value: value || "",
         placeholder: placeholder,
-        size: 3,
         onchange,
     })
 }
