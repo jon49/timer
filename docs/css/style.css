@@ -15,8 +15,13 @@ body {
   color: lightblue;
   font-family: "Courier New", Courier, monospace;
   font-size: var(--font-size);
-  max-width: 800px;
+  max-width: 810px;
+  padding: 0 0.5em;
   margin: 0 auto;
+}
+
+h1 {
+    margin: 0;
 }
 
 button {
