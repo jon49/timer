@@ -44,7 +44,6 @@ function App() {
             return {
                 sound: data.sound,
                 timers: timers
-                    .filter(x => x)
                     .map(x => ({ ...x }))
             }
         }
