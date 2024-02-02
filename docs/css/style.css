@@ -7,7 +7,7 @@
     --color-secondary: lightblue;
     --color-tertiary: #555;
     /* https://css-tricks.com/linearly-scale-font-size-with-css-clamp-based-on-the-viewport/ */
-    --font-size: clamp(1rem, 0.1818rem + 3.6364vw, 2rem);
+    --font-size: clamp(1rem, 0.1818rem + 3.6364vw, 1.75rem);
 }
 
 body {
