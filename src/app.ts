@@ -33,13 +33,24 @@ let soundOptions = [
 ]
 
 function App() {
+    let start = true
     let rawData = JSON.parse(localStorage.getItem(appStateKey) ?? `{"sound":"random","timers":[]}`)
     const data = <TimerInfo>vanX.reactive({ sound: rawData.sound || "random", timers: rawData.timers.filter((x: any) => x) })
     sound = data.sound
     let timers = data.timers
     van.derive(() => {
-        let json = JSON.stringify({ sound: data.sound, timers: timers.filter(x => x) } as TimerInfo)
-        console.log("saving", json)
+        let o: TimerInfo = {
+            sound: data.sound,
+            timers: timers
+                .filter(x => x)
+                .map(x => ({ ...x }))
+        }
+        if (start) {
+            start = false
+            return
+        }
+        let json = JSON.stringify(o)
+        console.log("saving")
         localStorage.setItem(appStateKey, json)
     })
 
