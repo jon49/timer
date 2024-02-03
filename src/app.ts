@@ -1,10 +1,11 @@
 import * as vanX from "vanjs-ext"
 import van, { State } from "vanjs-core"
 
-const { div, input, button, span, br, label, select, option, dialog, h2, form, iframe } = van.tags
+const { div, input, button, span, br, label, select, option, dialog, h2, h3, form, iframe, "x-dialog": xDialog } = van.tags
 
 interface TimerInfo {
     sound: string
+    allowedSounds: string[]
     timers: TimerData[]
 }
 
@@ -35,7 +36,7 @@ let soundOptions = [
 function App() {
     let start = true
     let rawData = JSON.parse(localStorage.getItem(appStateKey) ?? `{"sound":"random","timers":[]}`)
-    const data = <TimerInfo>vanX.reactive({ sound: rawData.sound || "random", timers: rawData.timers.filter((x: any) => x) })
+    const data = <TimerInfo>vanX.reactive({ sound: rawData.sound || "random", allowedSounds: rawData.allowedSounds ?? [], timers: rawData.timers.filter((x: any) => x) })
     sound = data.sound
     let timers = data.timers
     van.derive(() => {
@@ -43,6 +44,7 @@ function App() {
             start = false
             return {
                 sound: data.sound,
+                showSoundOptions: data.allowedSounds.filter(x => x),
                 timers: timers
                     .map(x => ({ ...x }))
             }
@@ -74,7 +76,7 @@ function App() {
                 numberInputView(hours, "Hrs", (e: any) => timer.hours = +(e.target?.value || 0)),
                 ":", numberInputView(minutes, "Min", (e: any) => timer.minutes = +(e.target?.value || 0)),
                 ":", numberInputView(seconds, "Sec", (e: any) => timer.seconds = +(e.target?.value || 0)), " — ",
-                clockView(timer, secondsLeft, state),
+                clockView(timer, data.allowedSounds, secondsLeft, state),
                 button({
                     class: () => state.val === "stopped" ? "" : "hidden",
                     onclick: () => {
@@ -114,8 +116,9 @@ function App() {
         div(label("Sound"), br(), select(
             { onchange: (e: any) => sound = data.sound = e.target.value },
             soundOptions.map(([value, label]) =>
-                             option({ value, selected: value === sound }, label))
-        ))
+                             option({ value, selected: value === sound }, label))),
+            button({ innerHTML: "&#9881;", onclick: showSoundOptions(data) })
+        )
     ]
 }
 
@@ -129,7 +132,7 @@ function numberInputView(value: number, placeholder: string, onchange: (value: E
     })
 }
 
-function clockView(timer: TimerData, secondsLeft: State<number>, state: State<TimerState>) {
+function clockView(timer: TimerData, allowedSounds: string[], secondsLeft: State<number>, state: State<TimerState>) {
     let clock = 
         span({
             class: () => 
@@ -157,7 +160,7 @@ function clockView(timer: TimerData, secondsLeft: State<number>, state: State<Ti
         clock,
         span(() => {
                 if (state.val === "alarm") {
-                    return span(getAlarm(timer.sound ?? sound))
+                    return span(getAlarm(timer.sound ?? sound, allowedSounds))
                 } else {
                     return ""
                 }
@@ -166,10 +169,59 @@ function clockView(timer: TimerData, secondsLeft: State<number>, state: State<Ti
     )
 }
 
+const dialogs = document.getElementById("dialogs")
+function showSoundOptions(data: TimerInfo) {
+    return () => {
+        if (!dialogs) {
+            return
+        }
+
+        if (data.allowedSounds.length === 0) {
+            data.allowedSounds.push(...soundOptions.slice(1).map(([value]) => value))
+        }
+
+        van.add(dialogs,
+            xDialog(
+                dialog( { class: "modal" },
+                    div(
+                        h2({ class: "inline" }, "Options"),
+                        form({ class: "inline", method: "dialog" },
+                            button({ value: "cancel" }, "Close"))
+                    ),
+                    h3("Allowed Sounds"),
+                    soundOptions.slice(1).map(([value, title]) => {
+                        return div({ onchange: (e: any) => {
+                            if (e.target.checked) {
+                                data.allowedSounds.push(value)
+                            } else {
+                                let index = data.allowedSounds.indexOf(value)
+                                if (index >= 0) {
+                                    data.allowedSounds.splice(index, 1)
+                                }
+                            }
+                        }},
+                            label(
+                                input({
+                                    type: "checkbox",
+                                    value,
+                                    checked: data.allowedSounds.includes(value),
+                                }), title)
+                        )
+                    })
+                )
+            )
+       )
+    }
+}
+
 function showTimerOptions(timer: TimerData) {
     return () => {
-        let xDialog = document.createElement("x-dialog")
-        van.add(xDialog, dialog( { class: "modal" },
+        if (!dialogs) {
+            return
+        }
+
+        van.add(dialogs, xDialog(
+        dialog( { class: "modal" },
             div(
                 h2({ class: "inline" }, "Options"),
                 form({ class: "inline", method: "dialog" },
@@ -182,14 +234,18 @@ function showTimerOptions(timer: TimerData) {
                   option({ value: "default", selected: timer.sound == null }, "Default"),
                   soundOptions.map(([value, label]) => option({ value, selected: value === timer.sound }, label))
             ))
-        ))
-        document.body.appendChild(xDialog)
+        )))
     }
 }
 
-let alarmIds = soundOptions.map(([value]) => value)
-function getAlarm(sound: string) {
-    if (sound === "random") return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
+let alarmIds = soundOptions.slice(1).map(([value]) => value)
+function getAlarm(sound: string, allowedSounds: string[]) {
+    console.log(sound, allowedSounds)
+    if (sound === "random") {
+        console.log("random")
+        let allowedAlarms = alarmIds.filter(x => allowedSounds.includes(x))
+        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
+    }
     let alarm = soundOptions.find(([name]) => name === sound)
     if (!alarm) return
     return iframe({
