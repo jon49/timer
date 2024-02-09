@@ -50,7 +50,6 @@ function App() {
             }
         }
         let json = JSON.stringify(data)
-        console.log("saving")
         localStorage.setItem(appStateKey, json)
     })
 
@@ -134,11 +133,11 @@ function numberInputView(value: number, placeholder: string, onchange: (value: E
 
 function clockView(timer: TimerData, allowedSounds: string[], secondsLeft: State<number>, state: State<TimerState>) {
     let clock = 
-        span({
+        button({
             class: () => 
                 state.val === "alarm"
-                    ? "pointer overlay"
-                : "pointer",
+                    ? "naked overlay"
+                : "naked",
             title: "Click to stop.",
             "aria-label": "Click to stop.",
             onclick: () => {
@@ -240,10 +239,8 @@ function showTimerOptions(timer: TimerData) {
 
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
 function getAlarm(sound: string, allowedSounds: string[]) {
-    console.log(sound, allowedSounds)
     if (sound === "random") {
-        console.log("random")
-        let allowedAlarms = alarmIds.filter(x => allowedSounds.includes(x))
+        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
         return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
     }
     let alarm = soundOptions.find(([name]) => name === sound)

@@ -123,3 +123,14 @@ dialog::backdrop {
     display: inline-block;
 }
 
+button.naked {
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    margin: 0;
+    padding: 0;
+}
+
