@@ -7,13 +7,13 @@
 let sound = "random"
 let soundOptions = [
     ["random", "Random"],
-    ["air-raid", "Air Raid"],
-    ["bell", "Bell"],
-    ["fire-truck", "Fire Truck"],
-    ["kyrie", "Kyrie eleison"],
-    ["song", "Song"],
-    ["tibetan", "Tibetan"],
-    ["warfare", "Warfare"],
+    ["air-raid", "Air Raid", "QaAK2JPE5p4?si=YXV04T1up7wfZxZZ"],
+    ["bell", "Bell", "475-VWbH3wY?si=lROSHQltHmUmtqpZ&start=2"],
+    ["fire-truck", "Fire Truck", "5rpMLGS-eBs?si=P0A12rm0JRMw0gBP"],
+    ["kyrie", "Kyrie eleison", "djkLm3WpUOE?si=De1srN8wGi3BTvlI"],
+    ["song", "Song", "mIxkMXqH8hI?si=4LxW-dKjtD7JACoX"],
+    ["tibetan", "Tibetan", "aXH-QsPTeEI?si=-TjIBSVmy8UWbprt"],
+    ["warfare", "Warfare", "Zjc8Ptc1o6U?si=bvqK34G4kopK8q1B"],
 ]
 
 class Timer extends HTMLElement {
@@ -155,7 +155,7 @@ class Timer extends HTMLElement {
     start() {
         // Set defaults when in "started" state
         this.startButton.classList.add("hidden")
-        this.alarm.textContent = ""
+        this.alarm.innerHTML = ""
         this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
         this.setClock()
@@ -175,7 +175,7 @@ class Timer extends HTMLElement {
     stop() {
         // Set defaults when in "stopped" state
         this.clock.textContent = ""
-        this.alarm.textContent = ""
+        this.alarm.innerHTML = ""
         this.startButton.classList.remove("hidden")
         this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
@@ -190,7 +190,7 @@ class Timer extends HTMLElement {
         if (!alarmClone) return
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
-        this.alarm.appendChild(alarmClone)
+        this.alarm.innerHTML = alarmClone
         this.restart.classList.remove('hidden')
     }
 
@@ -403,18 +403,28 @@ if (!timerEl) return
 
 timerEl.append(new TimerList())
 
-let alarmIds = ["bell", "warfare", "fire-truck", "air-raid", "song"]
+let alarmIds = soundOptions.slice(1).map(([value]) => value)
 /**
 * @param {string} sound
+* @returns {string | undefined}
 */
 function getAlarm(sound) {
-    if (sound === "random") return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
-    let alarm = document.getElementById(sound)
-    if (!(alarm instanceof HTMLTemplateElement)) {
-        console.error(`Alarm with id ${sound} not found`)
-        return
+    if (sound === "random") {
+        // TODO allowed alarms
+        return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
     }
-    return alarm.content.cloneNode(true)
+    let alarm = soundOptions.find(([name]) => name === sound)
+    if (!alarm) return
+    return `
+    <iframe
+        width=112
+        height=63
+        style="position:relative;top:23px;"
+        src="https://www.youtube.com/embed/${alarm[2]}&autoplay=1"
+        title="Time up"
+        frameborder=0
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    ></iframe>`
 }
 
 /**
