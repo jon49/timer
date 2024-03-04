@@ -458,10 +458,8 @@ class TimerList extends HTMLElement {
     handleAllowedSoundChange(e) {
         let target = e.target
         if (!(target instanceof HTMLInputElement && target.hasAttribute("allowed-sound"))) return
-        let parent = target.closest("dialog")
-        if (!parent) return
         this.data.allowedSounds.length = 0
-        for (let input of parent.querySelectorAll("[allowed-sound]")) {
+        for (let input of target.closest("dialog")?.querySelectorAll("[allowed-sound]") ?? []) {
             if (!(input instanceof HTMLInputElement && input.checked)) continue
             this.data.allowedSounds.push(input.value)
         }
