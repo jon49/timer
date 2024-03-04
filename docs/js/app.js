@@ -117,9 +117,10 @@ class Timer extends HTMLElement {
 
     handlechange() {
         if (this.soundSelect) {
-            this.sound = this.soundSelect.value
+            this.sound = sound = this.soundSelect.value
             if (this.sound === "default") {
                 this.sound = null
+                sound = "random"
             }
         }
         this.save()
