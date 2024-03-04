@@ -1,1 +1,548 @@
-(()=>{var G=Object,g,f=G.getPrototypeOf,W=document,M,T,b,ee={isConnected:1},Ae=1e3,C,z={},Ce=f(ee),te=f(f),le=(e,t,l,n)=>(e??(setTimeout(l,n),new Set)).add(t),ne=(e,t,l)=>{let n=T;T=t;try{return e(l)}catch(r){return console.error(r),l}finally{T=n}},O=e=>e.filter(t=>t._dom?.isConnected),re=e=>C=le(C,e,()=>{for(let t of C)t._bindings=O(t._bindings),t._listeners=O(t._listeners);C=g},Ae),_={get val(){return T?.add(this),this._val},get oldVal(){return T?.add(this),this._oldVal},set val(e){let t=this;if(e!==t._val){t._val=e;let l=[...t._listeners=O(t._listeners)];for(let n of l)F(n.f,n.s,n._dom),n._dom=g;t._bindings.length?M=le(M,t,Be):t._oldVal=e}}},oe=e=>({__proto__:_,_val:e,_oldVal:e,_bindings:[],_listeners:[]}),ie=e=>f(e??0)===_,Me=e=>ie(e)?e.val:e,Oe=e=>ie(e)?e.oldVal:e,k=(e,t)=>{let l=new Set,n={f:e},r=b;b=[];let o=ne(e,l,t);o=(o??W).nodeType?o:new Text(o);for(let i of l)re(i),i._bindings.push(n);for(let i of b)i._dom=o;return b=r,n._dom=o},F=(e,t=oe(),l)=>{let n=new Set,r={f:e,s:t};r._dom=l??b?.push(r)??ee,t.val=ne(e,n,t._val);for(let o of n)re(o),o._listeners.push(r);return t},ae=(e,...t)=>{for(let l of t.flat(1/0)){let n=f(l??0),r=n===_?k(()=>l.val):n===te?k(l):l;r!=g&&e.append(r)}return e},Pe=e=>(e._isBindingFunc=1,e),j=e=>new Proxy((t,...l)=>{let[n,...r]=f(l[0]??0)===Ce?l:[{},...l],o=e?W.createElementNS(e,t):W.createElement(t);for(let[i,a]of G.entries(n)){let s=w=>w?G.getOwnPropertyDescriptor(w,i)??s(f(w)):g,u=t+","+i,d=z[u]??(z[u]=s(f(o))?.set??0),A=i.startsWith("on")?(w,xe)=>{let Y=i.slice(2);o.removeEventListener(Y,xe),o.addEventListener(Y,w)}:d?d.bind(o):o.setAttribute.bind(o,i),H=f(a??0);H===te&&(!i.startsWith("on")||a._isBindingFunc)&&(a=F(a),H=_),H===_?k(()=>(A(a.val,a._oldVal),o)):A(a)}return ae(o,...r)},{get:(t,l)=>t.bind(g,l)}),se=(e,t)=>t?t!==e&&e.replaceWith(t):e.remove(),Be=()=>{let e=[...M].filter(t=>t._val!==t._oldVal);M=g;for(let t of new Set(e.flatMap(l=>l._bindings=O(l._bindings))))se(t._dom,k(t.f,t._dom)),t._dom=g;for(let t of e)t._oldVal=t._val},Ee=(e,t)=>se(e,k(t,e)),c={add:ae,_:Pe,tags:j(),tagsNS:j,state:oe,val:Me,oldVal:Oe,derive:F,hydrate:Ee};var{fromEntries:Ve,entries:fe,keys:Ke,getPrototypeOf:me}=Object,{get:Le,set:de,deleteProperty:ue,ownKeys:Ne}=Reflect,h=Symbol,{state:X,derive:He,add:Ge,tags:st}=c,We=me(X()),P,Fe=1e3,pe,v=h(),Xe=h(),Re=h(),B=h(),D=h(),R=h();var ce=e=>e?.[Re]?He(()=>I(e())):X(I(e)),I=e=>{if(!(e instanceof Object)||e[v])return e;let t=new Proxy((e[v]=Ve(fe(e).map(([l,n])=>[l,ce(n)])),e[Xe]=e,e[B]=[],e[D]=X(1),e),{get:(l,n)=>me(l[v][n]??0)===We?l[v][n].val:(n==="length"&&l[D].val,Le(l,n,t)),set(l,n,r){let o=l[v];if(n in o)return o[n].val=I(r),1;let i=n in l;if(de(l,n,r))return i||de(o,n,ce(r))&&(++l[D].val,Ze(t,n,o[n])),1},deleteProperty:(l,n)=>(ue(l[v],n)&&qe(l,n),ue(l,n)&&++l[D].val),ownKeys:l=>(l[D].val,Ne(l))});return t};var J=e=>e[B]=e[B].filter(t=>t._containerDom.isConnected),Je=(e,t,l,n)=>()=>{let r=n(l,()=>delete e[t],t);return r[R]=t,r},ge=(e,t,l,{_containerDom:n,f:r},o)=>{if(Ge(n,Je(e,t,l,r)),!o&&Array.isArray(e)&&t!=e.length-1){let i={};for(let s of n.childNodes)i[s[R]]=s;let a=n.firstChild;for(let s of Ke(e))a===i[s]?a=a.nextSibling:n.insertBefore(i[s],a)}},Ze=(e,t,l)=>J(e).forEach(ge.bind(pe,e,t,l)),qe=(e,t)=>{for(let l of J(e))[...l._containerDom.childNodes].find(n=>n[R]===t)?.remove()},Ue=e=>(P??(P=(setTimeout(()=>(P.forEach(J),P=pe),Fe),new Set))).add(e),ve=(e,t,l)=>{let n={_containerDom:e(),f:l};t[B].push(n),Ue(t);for(let[r,o]of fe(t[v]))ge(t,r,o,n,1);return n._containerDom};var{div:m,input:$,button:p,span:E,br:V,label:L,select:we,option:U,dialog:be,h2:Te,h3:Qe,form:_e,iframe:Ye,"x-dialog":ke}=c.tags,he="timers",K="random",y=[["random","Random"],["air-raid","Air Raid","QaAK2JPE5p4?si=YXV04T1up7wfZxZZ"],["bell","Bell","475-VWbH3wY?si=lROSHQltHmUmtqpZ&start=2"],["fire-truck","Fire Truck","5rpMLGS-eBs?si=P0A12rm0JRMw0gBP"],["kyrie","Kyrie eleison","djkLm3WpUOE?si=De1srN8wGi3BTvlI"],["song","Song","mIxkMXqH8hI?si=4LxW-dKjtD7JACoX"],["tibetan","Tibetan","aXH-QsPTeEI?si=-TjIBSVmy8UWbprt"],["warfare","Warfare","Zjc8Ptc1o6U?si=bvqK34G4kopK8q1B"]];function ze(){let e=!0,t=JSON.parse(localStorage.getItem(he)??'{"sound":"random","timers":[]}'),l=I({sound:t.sound||"random",allowedSounds:t.allowedSounds??[],timers:t.timers.filter(r=>r)});K=l.sound;let n=l.timers;return c.derive(()=>{if(e)return e=!1,{sound:l.sound,showSoundOptions:l.allowedSounds.filter(o=>o),timers:n.map(o=>({...o}))};let r=JSON.stringify(l);localStorage.setItem(he,r)}),[ve(m,n,({val:r})=>{let{hours:o,minutes:i,seconds:a}=r,s=c.state(0),u=c.state("stopped");return m(m(L($({class:"plain",type:"text",value:r.title||null,placeholder:"Title",onchange:d=>r.title=d.target.value}),E({class:"editable-pencil",innerHTML:"&#9998;"}))),m(Z(o,"Hrs",d=>r.hours=+(d.target?.value||0)),":",Z(i,"Min",d=>r.minutes=+(d.target?.value||0)),":",Z(a,"Sec",d=>r.seconds=+(d.target?.value||0))," \u2014 ",je(r,l.allowedSounds,s,u),p({class:()=>u.val==="stopped"?"":"hidden",onclick:()=>{u.val="running",ye(r,s,u)}},"Start"),p({onclick:()=>{u.val="running",ye(r,s,u)},innerHTML:"&#8635;",class:()=>u.val==="alarm"?"":"hidden"}),p({innerHTML:"&#9881;",onclick:tt(r)}),p({onclick:()=>{let d=n.findIndex(A=>A.id===r.id);d>=0&&n.splice(d,1)}},"\u274C")))}),V(),m(p({onclick:()=>n.push({id:nt(n),hours:0,minutes:0,seconds:0,title:"",sound:null})},"Add Timer")),V(),m(L("Sound"),V(),we({onchange:r=>K=l.sound=r.target.value},y.map(([r,o])=>U({value:r,selected:r===K},o))),p({innerHTML:"&#9881;",onclick:et(l)}))]}function Z(e,t,l){return $({class:"clock-input",type:"number",value:e||"",placeholder:t,onchange:l})}function je(e,t,l,n){let r=p({class:()=>n.val==="alarm"?"naked overlay":"naked",title:"Click to stop.","aria-label":"Click to stop.",onclick:()=>{n.val="stopped",Q(e.id)}},()=>{let o=l.val;if(n.val==="running"){let i=q(Math.floor(o/3600)),a=q(Math.floor(o/60)%60),s=q(o%60);return`${i}:${a}:${s}`}return""});return E({class:"relative-container"},r,E(()=>n.val==="alarm"?E(De(e.sound??K,t)):""))}var N=document.getElementById("dialogs");function et(e){return()=>{N&&(e.allowedSounds.length===0&&e.allowedSounds.push(...y.slice(1).map(([t])=>t)),c.add(N,ke(be({class:"modal"},m(Te({class:"inline"},"Options"),_e({class:"inline",method:"dialog"},p({value:"cancel"},"Close"))),Qe("Allowed Sounds"),y.slice(1).map(([t,l])=>m({onchange:n=>{if(n.target.checked)e.allowedSounds.push(t);else{let r=e.allowedSounds.indexOf(t);r>=0&&e.allowedSounds.splice(r,1)}}},L($({type:"checkbox",value:t,checked:e.allowedSounds.includes(t)}),l)))))))}}function tt(e){return()=>{N&&c.add(N,ke(be({class:"modal"},m(Te({class:"inline"},"Options"),_e({class:"inline",method:"dialog"},p({value:"cancel"},"Close"))),L("Sound",V(),we({onchange:t=>{e.sound=t.target.value}},U({value:"default",selected:e.sound==null},"Default"),y.map(([t,l])=>U({value:t,selected:t===e.sound},l)))))))}}var lt=y.slice(1).map(([e])=>e);function De(e,t){if(e==="random"){let n=lt.filter(r=>t.length===0||t.includes(r));return De(n[Math.floor(Math.random()*n.length)],t)}let l=y.find(([n])=>n===e);if(l)return Ye({width:"112",height:"63",style:"position:relative;top:23px;",src:`https://www.youtube.com/embed/${l[2]}&autoplay=1`,title:"Time up",frameborder:"0",allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"})}function nt(e){return Math.max(...e.map(l=>l.id),0)+1}var Se=document.getElementById("timer");Se?c.add(Se,ze()):console.error("No timer element found");var S={},x=null;function rt(e,t,l){let n=Ie(e),r=Date.now()/1e3;S[e.id]={fn:t,startedAt:r,totalSeconds:n,id:e.id,timeoutId:setTimeout(()=>{Q(e.id),l(e.id)},n*1e3)},ot()}function ot(){x||(x=setInterval(()=>{let e=Date.now()/1e3;for(let t of Object.values(S)){let l=e-t.startedAt,n=Math.round(t.totalSeconds-l);t.fn(n)}},1e3))}function Q(e){S[e]&&(clearTimeout(S[e].timeoutId),delete S[e],Object.keys(S).length===0&&x&&(clearInterval(x),x=null))}function ye(e,t,l){t.val=Ie(e),rt(e,n=>t.val=n,n=>{l.val="alarm",Q(n)})}function Ie(e){let{hours:t,minutes:l,seconds:n}=e;return t*3600+l*60+n}function q(e){return e.toString().padStart(2,"0")}})();
+// @ts-check
+
+// Custom element implementation.
+
+(() => {
+
+let sound = "random"
+let soundOptions = [
+    ["random", "Random"],
+    ["air-raid", "Air Raid", "QaAK2JPE5p4?si=YXV04T1up7wfZxZZ"],
+    ["bell", "Bell", "475-VWbH3wY?si=lROSHQltHmUmtqpZ&start=2"],
+    ["fire-truck", "Fire Truck", "5rpMLGS-eBs?si=P0A12rm0JRMw0gBP"],
+    ["kyrie", "Kyrie eleison", "djkLm3WpUOE?si=De1srN8wGi3BTvlI"],
+    ["song", "Song", "mIxkMXqH8hI?si=4LxW-dKjtD7JACoX"],
+    ["tibetan", "Tibetan", "aXH-QsPTeEI?si=-TjIBSVmy8UWbprt"],
+    ["warfare", "Warfare", "Zjc8Ptc1o6U?si=bvqK34G4kopK8q1B"],
+]
+
+/**
+* @typedef {Object} TimerData
+* @property {number} id
+* @property {number} hours
+* @property {number} minutes
+* @property {number} seconds
+* @property {string} title
+* @property {string | null | undefined} sound
+*/
+
+/**
+* @typedef {Object} TimerInfo
+* @property {string} sound
+* @property {string[]} allowedSounds
+* @property {TimerData[]} timers
+*/
+
+class Timer extends HTMLElement {
+    /** @type {"stopped" | "started"} */
+    state = "stopped"
+    /**
+    * @param {TimerData} timer
+    * @param {TimerInfo} info
+    */
+    constructor(timer, info) {
+        super()
+        this.allowedSounds = info.allowedSounds
+        let { id, hours, minutes, seconds, title } = timer
+        this.setAttribute("id", ""+id)
+        this.hours = clockInputView(hours, "Hrs")
+        this.minutes = clockInputView(minutes, "Min")
+        this.seconds = clockInputView(seconds, "Sec")
+        /** @type {string | null} */
+        this.sound = sound
+        /** @type {HTMLInputElement} */
+        // @ts-ignore
+        this._title = h("input", {
+            class: "plain",
+            type: "text",
+            value: title || null,
+            placeholder: "Title",
+        })
+        this.startButton = h('button', {}, "Start")
+        this.removeButton = h('button', {}, "❌")
+        this.restart = h('button', { class: 'hidden', html: '&#8635;' })
+        this.clock = h('button', { class: "naked", "aria-label": "Click to stop.", title: "Click to stop." })
+        this.alarm = h("span")
+        this.optionsButton = h("button", { html: "&#9881;" })
+        this.clockContainer = h('span', { class: "relative-container" },
+            this.clock, this.alarm)
+        this.append(
+            h("div", {},
+                h("label", {},
+                this._title,
+                h("span", { class: "editable-pencil", html: "&#9998;"}))),
+            h("div", {}, 
+                this.hours, ":", this.minutes, ":", this.seconds, " — ",
+                this.clockContainer, this.startButton, this.restart, this.optionsButton, this.removeButton)
+        )
+
+        this.addEventListener('click', this)
+        this.addEventListener('change', this)
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handleEvent(e) {
+        this[`handle${e.type}`](e)
+    }
+
+    /**
+    * @param {MouseEvent} e
+    */
+    handleclick(e) {
+        switch (e.target) {
+            case this.startButton:
+                e.preventDefault()
+                this.start()
+                break
+            case this.clock:
+                e.preventDefault()
+                this.stop()
+                break
+            case this.restart:
+                e.preventDefault()
+                this.restartClock()
+                break
+            case this.removeButton:
+                e.preventDefault()
+                this.sendNotification("timerremoved")
+                break
+            case this.optionsButton:
+                e.preventDefault()
+                this.showOptions()
+                break
+        }
+    }
+
+    handlechange() {
+        if (this.soundSelect) {
+            this.sound = this.soundSelect.value
+            if (this.sound === "default") {
+                this.sound = null
+            }
+        }
+        this.save()
+    }
+
+    save() {
+        this.sendNotification("save")
+    }
+
+    showOptions() {
+        let defaultSound = this.sound || "default"
+        /** @type {HTMLSelectElement} */
+        // @ts-ignore
+        this.soundSelect =
+                h("select", { onchange: this },
+                    ...[
+                        ["default", "Default"],
+                        ...soundOptions
+                    ].map(([value, text]) =>
+                        h("option", { value, selected: defaultSound === value }, text)))
+
+        document.body.append(
+            h("x-dialog", {},
+            h("dialog", { class: "modal" },
+                h("div", {},
+                h("h1", { class: "inline" }, "Options"),
+                h("form", { class: "inline", method: "dialog" },
+                    h("button", { value: "cancel" }, "Close")),
+                ),
+                h("label", {}, "Sound",
+                h("br"),
+                // @ts-ignore
+                this.soundSelect
+            )))
+        )
+    }
+
+    /**
+    * @param {number} [totalSeconds]
+    */
+    setClock(totalSeconds) {
+        totalSeconds ??= this.getTotalSeconds()
+        let hours = formatTime(Math.floor(totalSeconds / 3600))
+        let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
+        let seconds = formatTime(totalSeconds % 60)
+        this.clock.textContent = `${hours}:${minutes}:${seconds}`
+    }
+
+    start() {
+        // Set defaults when in "started" state
+        this.startButton.classList.add("hidden")
+        this.alarm.innerHTML = ""
+        this.clock.classList.remove('overlay')
+        this.restart.classList.add('hidden')
+        this.setClock()
+        // Start timer
+        this.sendNotification("clockstarted")
+        this.timeoutId = setTimeout(() => {
+            this.sendNotification("timerexpired")
+        }, this.getTotalSeconds() * 1e3)
+        this.state = "started"
+    }
+
+    restartClock() {
+        this.sendNotification("clockstopped")
+        this.start()
+    }
+
+    stop() {
+        // Set defaults when in "stopped" state
+        this.clock.textContent = ""
+        this.clock.classList.remove('overlay')
+        this.alarm.innerHTML = ""
+        this.startButton.classList.remove("hidden")
+        this.restart.classList.add('hidden')
+        this.state = "stopped"
+        // Stop timer
+        clearTimeout(this.timeoutId)
+        this.sendNotification("clockstopped")
+    }
+
+    renderTimeExpired() {
+        let alarmClone = getAlarm(this.sound || sound, this.allowedSounds)
+        if (!alarmClone) return
+        this.clock.textContent = ""
+        this.clock.classList.add('overlay')
+        this.alarm.innerHTML = alarmClone
+        this.restart.classList.remove('hidden')
+    }
+
+    /**
+    * @param {string} event
+    */
+    sendNotification(event) {
+        this.dispatchEvent(new CustomEvent(event, { detail: { timer: this }, bubbles: true }))
+    }
+
+    getTotalSeconds() {
+        return +this.hours.value * 3600 + +this.minutes.value * 60 + +this.seconds.value
+    }
+}
+
+/**
+* @param {number} num
+*/
+function formatTime(num) {
+    return num.toString().padStart(2, "0")
+}
+
+customElements.define("x-timer", Timer)
+
+class TimerList extends HTMLElement {
+
+    constructor() {
+        super()
+        /** @type {TimerInfo} */
+        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","allowedSounds":[],"timers":[]}`)
+        this.timers = this.data.timers
+        sound = this.data.sound
+        /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
+        this.activeTimers = []
+
+        for (let event of [
+            "clockstarted",
+            "clockstopped",
+            "save",
+            "timerremoved",
+            "timerexpired",
+            "change",
+            "click"]) {
+            this.addEventListener(event, this)
+        }
+
+        this.addTimer = h('button', {}, "Add Timer")
+
+        /** @type {HTMLSelectElement} */
+        // @ts-ignore
+        this.sound =
+            h("select", {},
+                ...soundOptions.map(([value, text]) =>
+                    h("option", { value, selected: sound === value }, text)))
+
+        /** @type {HTMLButtonElement} */
+        // @ts-ignore
+        this.options = h("button", { html: "&#9881;" })
+
+        this.timerList =
+            h("div", {},
+                ...this.timers.map(t =>
+                    h("div", {}, new Timer(t, this.data))))
+
+        this.append(
+            this.timerList,
+            h("br"),
+            h('div', {}, this.addTimer),
+            h("br"),
+            h("div", {},
+                h("label", {}, "Sound", h("br"), this.sound),
+                this.options
+            )
+        )
+    }
+
+    tick() {
+        if (this.timerId) return
+        this.updateTimers()
+        this.timerId = setInterval(() => {
+            this.updateTimers()
+            this.tick()
+        }, 1e3)
+    }
+
+    updateTimers() {
+        if (this.activeTimers.length === 0) {
+            clearInterval(this.timerId)
+            this.timerId = void 0
+            return
+        }
+        window.requestAnimationFrame(() => {
+            for (let t of this.activeTimers) {
+                t.timer.setClock(t.totalSeconds - Math.floor((Date.now() - t.startedAt) / 1e3))
+            }
+        })
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handleEvent(e) {
+        this[`handle${e.type}`](e)
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handlechange(e) {
+        this.handleAllowedSoundChange(e)
+        if (this.sound === e.target) {
+            sound = this.data.sound = this.sound.value
+            this.save()
+        }
+    }
+
+    /**
+    * @param {CustomEvent} e
+    */
+    handletimerexpired(e) {
+        let timer = e.detail.timer
+        this.removeActiveTimer(timer)
+        timer.renderTimeExpired()
+    }
+
+    /**
+    * @param {MouseEvent} e
+    */
+    handleclick(e) {
+        switch (e.target) {
+            case this.options:
+                this.showOptions()
+                break
+            case this.addTimer:
+                let id = Math.max(...this.timers.map(t => t.id), 0) + 1
+                /** @type {TimerData} */
+                let data = {
+                    title: "",
+                    seconds: 0,
+                    minutes: 0,
+                    hours: 0,
+                    id,
+                    sound: null,
+                }
+                let timer = new Timer(data, this.data)
+                this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
+                this.timerList.append(h("div", {}, timer))
+                this.save()
+                break
+        }
+    }
+
+    /**
+    * @param {CustomEvent} e
+    */
+    handleclockstarted(e) {
+        let timer = e.detail.timer
+        this.activeTimers.push({
+            totalSeconds: timer.getTotalSeconds(),
+            timer,
+            startedAt: Date.now()
+        })
+        this.tick()
+    }
+
+    /**
+    * @param {CustomEvent} e
+    */
+    handleclockstopped(e) {
+        /** @type {Timer} */
+        let timer = e.detail.timer
+        this.removeActiveTimer(timer)
+    }
+
+    /**
+    * @param {Timer} timer
+    */
+    removeActiveTimer(timer) {
+        let index = this.activeTimers.findIndex(t => t.timer === timer)
+        if (index === -1) return
+        this.activeTimers.splice(index, 1)
+    }
+
+    /**
+    * @param {CustomEvent} e
+    */
+    handlesave(e) {
+        /** @type {Timer} */
+        let timer = e.detail.timer
+        let id = +timer.id
+        let data = this.timers.find(t => t.id === id)
+        if (!data) return
+        data.hours = +timer.hours.value
+        data.minutes = +timer.minutes.value
+        data.seconds = +timer.seconds.value
+        data.title = timer._title.value
+        data.sound = timer.sound
+        this.save()
+    }
+
+    /**
+    * @param {CustomEvent} e
+    */
+    handletimerremoved(e) {
+        /** @type {Timer} */
+        let timer = e.detail.timer
+        let id = +timer.id
+        let index = this.timers.findIndex(t => t.id === id)
+        this.timers.splice(index, 1)
+        this.save()
+        timer.remove()
+    }
+
+    showOptions() {
+        let allowedSounds = this.data.allowedSounds
+        if (allowedSounds.length === 0) {
+            allowedSounds.push(...soundOptions.slice(1).map(([value]) => value))
+        }
+
+        let xDialog = h("x-dialog")
+        xDialog.innerHTML = `
+<dialog id=allowed-sounds class=modal>
+    <div>
+        <h2 class=inline>Options</h2>
+        <form class=inline method=dialog><button value=cancel>Close</button></form>
+    </div>
+    <h3>Allowed Sounds</h3>
+    ${soundOptions.slice(1).map(([value, title]) => `
+        <div>
+            <label>
+                <input
+                    allowed-sound
+                    type=checkbox
+                    value=${value}
+                    ${allowedSounds.includes(value) ? "checked" : ""}>
+                ${title}
+            </label>
+        </div>
+    `).join("")}
+</dialog>`
+
+        this.append(xDialog)
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handleAllowedSoundChange(e) {
+        let target = e.target
+        if (!(target instanceof HTMLInputElement && target.hasAttribute("allowed-sound"))) return
+        let parent = target.closest("dialog")
+        if (!parent) return
+        this.data.allowedSounds.length = 0
+        for (let input of parent.querySelectorAll("[allowed-sound]")) {
+            if (!(input instanceof HTMLInputElement && input.checked)) continue
+            this.data.allowedSounds.push(input.value)
+        }
+        this.save()
+    }
+
+    save() {
+        localStorage.setItem("timers", JSON.stringify(this.data))
+    }
+}
+
+customElements.define("timer-list", TimerList)
+
+let timerEl = document.getElementById("timer")
+if (!timerEl) return
+
+timerEl.append(new TimerList())
+
+let alarmIds = soundOptions.slice(1).map(([value]) => value)
+/**
+* @param {string} sound
+* @param {string[]} allowedSounds
+* @returns {string | undefined}
+*/
+function getAlarm(sound, allowedSounds) {
+    if (sound === "random") {
+        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
+        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
+    }
+    let alarm = soundOptions.find(([name]) => name === sound)
+    if (!alarm) return
+    return `
+    <iframe
+        width=112
+        height=63
+        style="position:relative;top:23px;"
+        src="https://www.youtube.com/embed/${alarm[2]}&autoplay=1"
+        title="Time up"
+        frameborder=0
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    ></iframe>`
+}
+
+/**
+* @param {number | null} value
+* @param {string} placeholder
+* @returns {HTMLInputElement}
+*/
+function clockInputView(value, placeholder) {
+    value = value || null
+    // @ts-ignore
+    return h('input', {
+        type: "number",
+        value,
+        placeholder,
+        class: "clock-input"
+    })
+}
+
+/**
+* @param {string} tag 
+* @param {Record<string, string | number | boolean | Object | ((event: Event) => void)  | null>} props
+* @param {(string | Node)[]} children
+*/
+function h(tag, props = {}, ...children) {
+    const el = document.createElement(tag)
+    for (let [k, v] of Object.entries(props)) {
+        if (v == null || v === false) continue
+        if (v instanceof Function || v instanceof Object) {
+            el.addEventListener(k.slice(2), v)
+            continue
+        }
+        v = "" + v
+        if (k === "html") {
+            el.innerHTML = v
+        } else {
+            el.setAttribute(k, v)
+        }
+    }
+    el.append(...children)
+    return el
+}
+
+})()
+
