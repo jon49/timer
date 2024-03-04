@@ -61,7 +61,7 @@ class Timer extends HTMLElement {
         this.startButton = h('button', {}, "Start")
         this.removeButton = h('button', {}, "❌")
         this.restart = h('button', { class: 'hidden', html: '&#8635;' })
-        this.clock = h('span', { class: "pointer", "aria-label": "Click to stop.", title: "Click to stop." })
+        this.clock = h('button', { class: "naked", "aria-label": "Click to stop.", title: "Click to stop." })
         this.alarm = h("span")
         this.optionsButton = h("button", { html: "&#9881;" })
         this.clockContainer = h('span', { class: "relative-container" },
@@ -191,9 +191,9 @@ class Timer extends HTMLElement {
     stop() {
         // Set defaults when in "stopped" state
         this.clock.textContent = ""
+        this.clock.classList.remove('overlay')
         this.alarm.innerHTML = ""
         this.startButton.classList.remove("hidden")
-        this.clock.classList.remove('overlay')
         this.restart.classList.add('hidden')
         this.state = "stopped"
         // Stop timer
