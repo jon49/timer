@@ -342,7 +342,16 @@ class TimerList extends HTMLElement {
                 break
             case this.addTimer:
                 let id = Math.max(...this.timers.map(t => t.id), 0) + 1
-                let timer = new Timer(id, 0, 0, 0, "", null)
+                /** @type {TimerData} */
+                let data = {
+                    title: "",
+                    seconds: 0,
+                    minutes: 0,
+                    hours: 0,
+                    id,
+                    sound: null,
+                }
+                let timer = new Timer(data, this.data)
                 this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
                 this.timerList.append(h("div", {}, timer))
                 this.save()
