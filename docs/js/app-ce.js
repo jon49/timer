@@ -16,23 +16,39 @@ let soundOptions = [
     ["warfare", "Warfare", "Zjc8Ptc1o6U?si=bvqK34G4kopK8q1B"],
 ]
 
+/**
+* @typedef {Object} TimerData
+* @property {number} id
+* @property {number} hours
+* @property {number} minutes
+* @property {number} seconds
+* @property {string} title
+* @property {string | null | undefined} sound
+*/
+
+/**
+* @typedef {Object} TimerInfo
+* @property {string} sound
+* @property {string[]} allowedSounds
+* @property {TimerData[]} timers
+*/
+
 class Timer extends HTMLElement {
     /** @type {"stopped" | "started"} */
     state = "stopped"
     /**
-    * @param {number} id
-    * @param {number} hours
-    * @param {number} minutes
-    * @param {number} seconds
-    * @param {string} title
-    * @param {string | null | undefined} sound
+    * @param {TimerData} timer
+    * @param {TimerInfo} info
     */
-    constructor(id, hours, minutes, seconds, title, sound) {
+    constructor(timer, info) {
         super()
+        this.allowedSounds = info.allowedSounds
+        let { id, hours, minutes, seconds, title } = timer
         this.setAttribute("id", ""+id)
         this.hours = clockInputView(hours, "Hrs")
         this.minutes = clockInputView(minutes, "Min")
         this.seconds = clockInputView(seconds, "Sec")
+        /** @type {string | null} */
         this.sound = sound
         /** @type {HTMLInputElement} */
         // @ts-ignore
@@ -186,7 +202,7 @@ class Timer extends HTMLElement {
     }
 
     renderTimeExpired() {
-        let alarmClone = getAlarm(this.sound || sound)
+        let alarmClone = getAlarm(this.sound || sound, this.allowedSounds)
         if (!alarmClone) return
         this.clock.textContent = ""
         this.clock.classList.add('overlay')
@@ -215,22 +231,12 @@ function formatTime(num) {
 
 customElements.define("x-timer", Timer)
 
-/**
-* @typedef {Object} TimerData
-* @property {number} id
-* @property {number} hours
-* @property {number} minutes
-* @property {number} seconds
-* @property {string} title
-* @property {string | null | undefined} sound
-*/
-
 class TimerList extends HTMLElement {
 
     constructor() {
         super()
-        /** @type {{ sound: string, timers: TimerData[]}} */
-        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","timers":[]}`)
+        /** @type {TimerInfo} */
+        this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","allowedSounds":[],"timers":[]}`)
         this.timers = this.data.timers
         sound = this.data.sound
         /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
@@ -256,17 +262,24 @@ class TimerList extends HTMLElement {
                 ...soundOptions.map(([value, text]) =>
                     h("option", { value, selected: sound === value }, text)))
 
+        /** @type {HTMLButtonElement} */
+        // @ts-ignore
+        this.options = h("button", { html: "&#9881;" })
+
         this.timerList =
             h("div", {},
                 ...this.timers.map(t =>
-                    h("div", {}, new Timer(t.id, t.hours, t.minutes, t.seconds, t.title, t.sound))))
+                    h("div", {}, new Timer(t, this.data))))
 
         this.append(
             this.timerList,
             h("br"),
             h('div', {}, this.addTimer),
             h("br"),
-            h("div", {}, h("label", {}, "Sound", h("br"), this.sound))
+            h("div", {},
+                h("label", {}, "Sound", h("br"), this.sound),
+                this.options
+            )
         )
     }
 
@@ -303,6 +316,7 @@ class TimerList extends HTMLElement {
     * @param {Event} e
     */
     handlechange(e) {
+        this.handleAllowedSoundChange(e)
         if (this.sound === e.target) {
             sound = this.data.sound = this.sound.value
             this.save()
@@ -322,12 +336,18 @@ class TimerList extends HTMLElement {
     * @param {MouseEvent} e
     */
     handleclick(e) {
-        if (e.target !== this.addTimer) return
-        let id = Math.max(...this.timers.map(t => t.id), 0) + 1
-        let timer = new Timer(id, 0, 0, 0, "", null)
-        this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
-        this.timerList.append(h("div", {}, timer))
-        this.save()
+        switch (e.target) {
+            case this.options:
+                this.showOptions()
+                break
+            case this.addTimer:
+                let id = Math.max(...this.timers.map(t => t.id), 0) + 1
+                let timer = new Timer(id, 0, 0, 0, "", null)
+                this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
+                this.timerList.append(h("div", {}, timer))
+                this.save()
+                break
+        }
     }
 
     /**
@@ -391,6 +411,53 @@ class TimerList extends HTMLElement {
         timer.remove()
     }
 
+    showOptions() {
+        let allowedSounds = this.data.allowedSounds
+        if (allowedSounds.length === 0) {
+            allowedSounds.push(...soundOptions.slice(1).map(([value]) => value))
+        }
+
+        let xDialog = h("x-dialog")
+        xDialog.innerHTML = `
+<dialog id=allowed-sounds class=modal>
+    <div>
+        <h2 class=inline>Options</h2>
+        <form class=inline method=dialog><button value=cancel>Close</button></form>
+    </div>
+    <h3>Allowed Sounds</h3>
+    ${soundOptions.slice(1).map(([value, title]) => `
+        <div>
+            <label>
+                <input
+                    allowed-sound
+                    type=checkbox
+                    value=${value}
+                    ${allowedSounds.includes(value) ? "checked" : ""}>
+                ${title}
+            </label>
+        </div>
+    `).join("")}
+</dialog>`
+
+        this.append(xDialog)
+    }
+
+    /**
+    * @param {Event} e
+    */
+    handleAllowedSoundChange(e) {
+        let target = e.target
+        if (!(target instanceof HTMLInputElement && target.hasAttribute("allowed-sound"))) return
+        let parent = target.closest("dialog")
+        if (!parent) return
+        this.data.allowedSounds.length = 0
+        for (let input of parent.querySelectorAll("[allowed-sound]")) {
+            if (!(input instanceof HTMLInputElement && input.checked)) continue
+            this.data.allowedSounds.push(input.value)
+        }
+        this.save()
+    }
+
     save() {
         localStorage.setItem("timers", JSON.stringify(this.data))
     }
@@ -406,12 +473,13 @@ timerEl.append(new TimerList())
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
 /**
 * @param {string} sound
+* @param {string[]} allowedSounds
 * @returns {string | undefined}
 */
-function getAlarm(sound) {
+function getAlarm(sound, allowedSounds) {
     if (sound === "random") {
-        // TODO allowed alarms
-        return getAlarm(alarmIds[Math.floor(Math.random() * alarmIds.length)])
+        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
+        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
     }
     let alarm = soundOptions.find(([name]) => name === sound)
     if (!alarm) return
