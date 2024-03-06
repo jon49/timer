@@ -238,7 +238,7 @@ class TimerList extends HTMLElement {
         super()
         /** @type {TimerInfo} */
         this.data = JSON.parse(localStorage.getItem("timers") || `{"sound":"random","allowedSounds":[],"timers":[]}`)
-        this.timers = this.data.timers
+        this.timers = this.data.timers.filter(x => x)
         sound = this.data.sound
         /** @type { { totalSeconds: number, timer: Timer, startedAt: number }[] } */
         this.activeTimers = []
