@@ -353,7 +353,7 @@ class TimerList extends HTMLElement {
                     sound: null,
                 }
                 let timer = new Timer(data, this.data)
-                this.timers.push({ hours: 0, minutes: 0, seconds: 0, id, title: "", sound: null })
+                this.timers.push(data)
                 this.timerList.append(h("div", {}, timer))
                 this.save()
                 break
@@ -467,6 +467,7 @@ class TimerList extends HTMLElement {
     }
 
     save() {
+        this.data.timers = this.timers
         localStorage.setItem("timers", JSON.stringify(this.data))
     }
 }
