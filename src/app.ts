@@ -36,7 +36,7 @@ let soundOptions = [
 function App() {
     let start = true
     let rawData = JSON.parse(localStorage.getItem(appStateKey) ?? `{"sound":"random","timers":[]}`)
-    const data = <TimerInfo>vanX.reactive({ sound: rawData.sound || "random", allowedSounds: rawData.allowedSounds ?? [], timers: rawData.timers.filter((x: any) => x) })
+    const data = <TimerInfo & vanX.ReactiveObj>vanX.reactive({ sound: rawData.sound || "random", allowedSounds: rawData.allowedSounds ?? [], timers: rawData.timers.filter((x: any) => x) })
     sound = data.sound
     let timers = data.timers
     van.derive(() => {
@@ -145,8 +145,8 @@ function clockView(timer: TimerData, allowedSounds: string[], secondsLeft: State
                 stopTimer(timer.id)
             }
         }, () => {
-            let val = secondsLeft.val
             if (state.val === "running") {
+                let val = secondsLeft.val
                 let hours = formatTime(Math.floor(val / 3600))
                 let minutes = formatTime(Math.floor(val / 60) % 60)
                 let seconds = formatTime(val % 60)
