@@ -55,7 +55,7 @@ select {
     padding: 0.25em;
 }
 
-a:visited {
+a, a:visited {
     color: var(--color-secondary);
 }
 
