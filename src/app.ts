@@ -132,9 +132,9 @@ function numberInputView(value: number, placeholder: string, onchange: (value: E
 }
 
 function clockView(timer: TimerData, allowedSounds: string[], secondsLeft: State<number>, state: State<TimerState>) {
-    let clock = 
+    let clock =
         button({
-            class: () => 
+            class: () =>
                 state.val === "alarm"
                     ? "naked overlay"
                 : "naked",
