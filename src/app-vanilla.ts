@@ -273,12 +273,12 @@ const timerTemplate = createTemplate(`
 </div>
 <div>
     <!-- Timer input -->
-    <label><input
-        class="plain clock" data-action=save name=hours type=number x=hours placeholder=h></label
-    >:<label><input
-        class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m></label
-    >:<label><input
-        class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s></label>
+    <input
+        class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
+    >:<input
+        class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
+    >:<input
+        class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
 
     <span x=clockSeperator>&#9876;</span>
 
