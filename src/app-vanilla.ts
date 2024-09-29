@@ -260,21 +260,27 @@ interface TimerTemplate {
     settingsEl: HTMLButtonElement
     deleteEl: HTMLButtonElement
     alarmEl: HTMLSpanElement
+    clockSeperator: HTMLSpanElement
 }
 
 const timerTemplate = createTemplate(`
 <div>
 <div>
     <label>
-        <input x=title data-action=save name=title class=plain type=text placeholder=Title>
+        <input x=title data-action=save class=plain name=title type=text placeholder=Title>
         <span class=editable-pencil>&#9998;</span>
     </label>
 </div>
 <div>
     <!-- Timer input -->
-    <input data-action=save class=clock-input name=hours type=number x=hours placeholder=Hrs
-    >:<input data-action=save class=clock-input name=minutes type=number x=minutes placeholder=Min
-    >:<input data-action=save class=clock-input name=seconds type=number x=seconds placeholder=Sec>
+    <label><input
+        class="plain clock" data-action=save name=hours type=number x=hours placeholder=h></label
+    >:<label><input
+        class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m></label
+    >:<label><input
+        class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s></label>
+
+    <span x=clockSeperator>&#9876;</span>
 
     <!-- Clock display -->
     <span class=relative-container>
@@ -372,6 +378,7 @@ class Timer extends HTMLElement {
         this.node.stopEl.classList.remove('overlay')
         show(this.node.startEl)
         hide(this.node.restartEl)
+        hide(this.node.clockSeperator)
         this.node.alarmEl.textContent = ""
         this.clearClock()
     }
@@ -379,6 +386,7 @@ class Timer extends HTMLElement {
     startClock() {
         // Set defaults when in "started" state
         hide(this.node.startEl)
+        show(this.node.clockSeperator)
         show(this.node.restartEl)
         this.setClock()
         // Start timer
@@ -400,6 +408,7 @@ class Timer extends HTMLElement {
 
     startAlarm() {
         this.clearClock()
+        hide(this.node.clockSeperator)
         let alarmClone = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
         if (!alarmClone) {
             this.stopClock()

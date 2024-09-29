@@ -71,10 +71,31 @@ input.plain:not(:focus) {
     color: inherit;
     padding: 0;
     outline: none;
+    appearance: textfield;
 }
 
 input.plain:focus + .editable-pencil {
     display: none;
+}
+
+.clock {
+    width: 2ch;
+    margin: 0;
+    text-align: right;
+}
+
+.clock:focus {
+    width: 4ch;
+}
+
+.clock::-webkit-inner-spin-button,
+.clock::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.clock:focus::-webkit-inner-spin-button,
+.clock:focus::-webkit-outer-spin-button {
+    -webkit-appearance: auto;
 }
 
 .editable-pencil {
