@@ -2,8 +2,9 @@
   "scripts": {
     "start": "npx serve docs",
     "start:van": "npx esbuild --bundle --format=iife src/app-van.ts --outfile=docs/js/app-van.js --servedir=docs --watch",
-    "start:ce": "npx esbuild --bundle --format=iife src/app.ts --outfile=docs/js/app.js --servedir=docs --watch",
-    "build": "npx esbuild  src/app.ts src/app-van.ts --bundle --format=esm --outdir=docs/js/ --minify"
+    "start:stage-left": "npx esbuild --bundle --format=iife src/app-stage-left.ts --outfile=docs/js/app-stage-left.js --servedir=docs --watch",
+    "start:vanilla": "npx esbuild --bundle --format=iife src/app-vanilla.ts --outfile=docs/js/app-vanilla.js --servedir=docs --watch",
+    "build": "npx esbuild src/app-stage-left.ts src/app-van.ts src/app-vanilla.ts --bundle --format=esm --outdir=docs/js/ --minify"
   },
   "dependencies": {
     "serve": "^14.2.1",
