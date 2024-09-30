@@ -32,7 +32,6 @@ interface AppTemplate {
 
 class App extends HTMLElement {
 
-    activeTimers: Timer[]
     data: TimerInfo
     timers: Timer[]
     $timers: HTMLDivElement
@@ -40,7 +39,6 @@ class App extends HTMLElement {
 
     constructor() {
         super()
-        this.activeTimers = []
         this.data = JSON.parse(localStorage.getItem(appStateKey) ?? '{"sound":"random","timers":[], "allowedSounds":[]}')
         if (this.data.allowedSounds == null) {
             this.data.allowedSounds = []
@@ -126,19 +124,12 @@ class App extends HTMLElement {
         let target = event.target
         if (!(target instanceof Timer)) return
 
-        this.activeTimers.push(target)
         this.tick()
     }
 
     clockStopped(event: Event) {
         let target = event.target
         if (!(target instanceof Timer)) return
-
-        this.activeTimers = this.activeTimers.filter(x => x !== event.target)
-        if (this.interval && this.activeTimers.length === 0) {
-            clearInterval(this.interval)
-            this.interval = null
-        }
     }
 
     editSettings() {
@@ -206,10 +197,19 @@ class App extends HTMLElement {
 
     tick() {
         if (this.interval) return
+        let self = this
         this.interval = setInterval(() => {
-            for (let timer of this.activeTimers) {
-                timer.tick()
-            }
+            requestAnimationFrame(function() {
+                let hasActiveTimer = false
+                for (let timer of self.timers) {
+                    let isActive = timer.tick()
+                    hasActiveTimer = hasActiveTimer || isActive
+                }
+                if (!hasActiveTimer && self.interval) {
+                    clearInterval(self.interval)
+                    self.interval = null
+                }
+            })
         }, 1e3)
     }
 
@@ -311,6 +311,7 @@ class Timer extends HTMLElement {
     totalTime: number | null
     timeoutId: number | undefined
     node: TimerTemplate & {clockEl: HTMLButtonElement}
+    state: "stopped" | "started" | "alarming" = "stopped"
 
     constructor(timer: TimerData, timerInfo: TimerInfo) {
         super()
@@ -381,9 +382,11 @@ class Timer extends HTMLElement {
         hide(this.node.clockSeperator)
         this.node.alarmEl.textContent = ""
         this.clearClock()
+        this.state = "stopped"
     }
 
     startClock() {
+        this.state = "started"
         // Set defaults when in "started" state
         hide(this.node.startEl)
         show(this.node.clockSeperator)
@@ -418,6 +421,7 @@ class Timer extends HTMLElement {
         this.node.stopEl.classList.add("overlay")
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
+        this.state = "alarming"
     }
 
     clearClock() {
@@ -470,7 +474,10 @@ class Timer extends HTMLElement {
         return this.timer.hours * 3600 + this.timer.minutes * 60 + +this.timer.seconds
     }
 
-    tick() {
+    tick(): boolean {
+        if (this.state !== "started") {
+            return false
+        }
         if (this.startedAt == null) {
             this.startedAt = Date.now()/1e3
             this.totalTime = this.getTotalSeconds()
@@ -480,9 +487,10 @@ class Timer extends HTMLElement {
         let timeLeft = Math.round((this.totalTime ?? 0) - elapsed)
         if (timeLeft <= 0) {
             this.startAlarm()
-            return
+            return false
         }
         this.setClock(timeLeft)
+        return true
     }
 
     sendNotification(event: string) {
@@ -550,6 +558,6 @@ function createTemplate(templateString: string) {
 }
 
 function setValue(input: HTMLInputElement, value: string | number) {
-    input.value = ""+value
+    input.value = value.toString()
 }
 
