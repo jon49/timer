@@ -86,22 +86,7 @@ class App extends HTMLElement {
     }
 
     handleEvent(event: Event) {
-        event.stopPropagation()
-        event.preventDefault()
-        let target = event.target
-        if (target instanceof HTMLElement) {
-            // @ts-ignore
-            let action = target.dataset.action || target.closest('[data-action]')?.dataset?.action
-            if (action) {
-                if (this[action] instanceof Function) {
-                    this[action](event)
-                } else {
-                    console.error(`Action ${action} not implemented.`)
-                }
-            } else if (this[event.type] instanceof Function) {
-                this[event.type](event)
-            }
-        }
+        handleEvent(this, event)
     }
 
     addTimer() {
@@ -336,18 +321,7 @@ class Timer extends HTMLElement {
     }
 
     handleEvent(event: Event) {
-        event.stopPropagation()
-        let target = event.target
-        if (target instanceof HTMLElement) {
-            let action = target.dataset.action
-            if (action) {
-                if (this[action] instanceof Function) {
-                    this[action](event)
-                } else {
-                    console.error(`Action ${action} not implemented.`)
-                }
-            }
-        }
+        handleEvent(this, event)
     }
 
     save(event: Event) {
@@ -559,5 +533,24 @@ function createTemplate(templateString: string) {
 
 function setValue(input: HTMLInputElement, value: string | number) {
     input.value = value.toString()
+}
+
+function handleEvent(context: HTMLElement, event: Event) {
+    event.stopPropagation()
+    event.preventDefault()
+    let target = event.target
+    if (target instanceof HTMLElement) {
+        // @ts-ignore
+        let action = target.dataset.action || target.closest('[data-action]')?.dataset?.action
+        if (action) {
+            if (context[action] instanceof Function) {
+                context[action](event)
+            } else {
+                console.error(`Action ${action} not implemented.`)
+            }
+        } else if (context[event.type] instanceof Function) {
+            context[event.type](event)
+        }
+    }
 }
 
