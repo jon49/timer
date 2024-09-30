@@ -516,9 +516,9 @@ function getElementById(id: string) {
     return document.getElementById(id)
 }
 
-function getXElements(fragement: DocumentFragment) {
+function getXElements(fragment: DocumentFragment) {
     let o = {}
-    for (let el of fragement.querySelectorAll(`[x]`)) {
+    for (let el of fragment.querySelectorAll(`[x]`)) {
         o[el.getAttribute('x') || ''] = el
         el.removeAttribute('x')
     }
