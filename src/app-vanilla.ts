@@ -250,7 +250,6 @@ interface TimerTemplate {
 
 const timerTemplate = createTemplate(`
 <div>
-<div>
     <label>
         <input x=title data-action=save class=plain name=title type=text placeholder=Title>
         <span class=editable-pencil>&#9998;</span>
@@ -283,7 +282,6 @@ const timerTemplate = createTemplate(`
     <button x=settingsEl data-action=editSettings>&#9881;</button>
     <button x=deleteEl data-action=deleteTimer>❌</button>
 
-</div>
 </div>`)
 
 
