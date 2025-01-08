@@ -18,12 +18,16 @@ interface TimerData {
 const appStateKey = "timers"
 let soundOptions = [
     ["random", "Random"],
-    ["air-raid", "Air Raid", "QaAK2JPE5p4?si=YXV04T1up7wfZxZZ"],
-    ["bell", "Bell", "475-VWbH3wY?si=lROSHQltHmUmtqpZ&start=2"],
-    ["kyrie", "Kyrie eleison", "djkLm3WpUOE?si=De1srN8wGi3BTvlI"],
-    ["song", "Song", "mIxkMXqH8hI?si=4LxW-dKjtD7JACoX"],
-    ["tibetan", "Tibetan", "aXH-QsPTeEI?si=-TjIBSVmy8UWbprt"],
-    ["warfare", "Warfare", "Zjc8Ptc1o6U?si=bvqK34G4kopK8q1B"],
+    ["explosion", "Explosion", "/media/Explosion+2.wav"],
+    ["forest", "Forest", "/media/forest.wav"],
+    ["hag_idle", "Hag Idle", "/media/hag_idle.wav"],
+    ["monster_footsteps", "Monster Footsteps", "/media/Monster_Footsteps.wav"],
+    ["night2", "Night", "/media/night2.wav"],
+    ["rain_start", "Rain", "/media/rain_start.wav"],
+    ["sea", "Sea", "/media/sea.wav"],
+    ["swamp1", "Swamp", "/media/swamp1.wav"],
+    ["thunderrumble", "Thunder Rumble", "/media/thunderrumble.wav"],
+    ["waves", "Waves", "/media/waves.wav"],
 ]
 
 interface AppTemplate {
@@ -184,7 +188,7 @@ class App extends HTMLElement {
         if (this.interval) return
         let self = this
         this.interval = setInterval(() => {
-            requestAnimationFrame(function() {
+            requestAnimationFrame(function () {
                 let hasActiveTimer = false
                 for (let timer of self.timers) {
                     let isActive = timer.tick()
@@ -239,16 +243,16 @@ interface TimerTemplate {
     hours: HTMLInputElement
     minutes: HTMLInputElement
     seconds: HTMLInputElement
-    stopEl: HTMLButtonElement
-    startEl: HTMLButtonElement
+    toggleEl: HTMLButtonElement
     restartEl: HTMLButtonElement
     settingsEl: HTMLButtonElement
     deleteEl: HTMLButtonElement
-    alarmEl: HTMLSpanElement
     clockSeperator: HTMLSpanElement
+    countdownEl: HTMLButtonElement
+    audioEl: HTMLAudioElement
 }
 
-const timerTemplate = createTemplate(`
+const timerTemplate = createTemplate(/*html*/`
 <div>
     <label>
         <input x=title data-action=save class=plain name=title type=text placeholder=Title>
@@ -266,18 +270,18 @@ const timerTemplate = createTemplate(`
 
     <span x=clockSeperator>&#9876;</span>
 
-    <!-- Clock display -->
-    <span class=relative-container>
-        <button
-            x=stopEl
-            data-action=stopClock
-            class=naked
-            title="Click to stop."
-            aria-label="Click to stop."></button>
-        <span x=alarmEl></span>
+    <span hidden>
+        <audio x=audioEl loop></audio>
     </span>
 
-    <button x=startEl data-action=startClock>Start</button>
+    <button
+        x=countdownEl
+        data-action=stopClock
+        class=naked
+        title="Click to stop."
+        aria-label="Click to stop."></button>
+
+    <button x=toggleEl data-action=toggleClock>Start</button>
     <button x=restartEl data-action=restartClock>&#8635;</button>
     <button x=settingsEl data-action=editSettings>&#9881;</button>
     <button x=deleteEl data-action=deleteTimer>❌</button>
@@ -293,8 +297,9 @@ class Timer extends HTMLElement {
     startedAt: number | null
     totalTime: number | null
     timeoutId: number | undefined
-    node: TimerTemplate & {clockEl: HTMLButtonElement}
+    node: TimerTemplate
     state: "stopped" | "started" | "alarming" = "stopped"
+    audioFadeIn: number | undefined
 
     constructor(timer: TimerData, timerInfo: TimerInfo) {
         super()
@@ -303,8 +308,7 @@ class Timer extends HTMLElement {
         this.timer = timer
         this.info = timerInfo
         let template = timerTemplate.content.cloneNode(true) as DocumentFragment;
-        let node = getXElements(template) as TimerTemplate
-        this.node = { ...node, clockEl: node.stopEl }
+        let node = this.node = getXElements(template) as TimerTemplate
 
         setValue(node.title, timer.title)
         setValue(node.hours, timer.hours || "")
@@ -346,21 +350,30 @@ class Timer extends HTMLElement {
         this.sendNotification("timerUpdated")
     }
 
+    toggleClock() {
+        if (this.state === "stopped") {
+            this.startClock()
+        } else {
+            this.stopClock()
+        }
+    }
+
     stopClock() {
         // Set defaults when in "stopped" state
-        this.node.stopEl.classList.remove('overlay')
-        show(this.node.startEl)
+        clearInterval(this.audioFadeIn)
+        this.node.toggleEl.textContent = "Start"
+        show(this.node.toggleEl)
         hide(this.node.restartEl)
         hide(this.node.clockSeperator)
-        this.node.alarmEl.textContent = ""
+        this.node.audioEl.pause()
         this.clearClock()
         this.state = "stopped"
     }
 
     startClock() {
-        this.state = "started"
         // Set defaults when in "started" state
-        hide(this.node.startEl)
+        this.node.toggleEl.textContent = "Stop"
+        hide(this.node.toggleEl)
         show(this.node.clockSeperator)
         show(this.node.restartEl)
         this.setClock()
@@ -370,6 +383,7 @@ class Timer extends HTMLElement {
         this.timeoutId = setTimeout(() => {
             this.sendNotification("timerExpired")
         }, this.getTotalSeconds() * 1e3)
+        this.state = "started"
     }
 
     restartClock() {
@@ -384,21 +398,44 @@ class Timer extends HTMLElement {
     startAlarm() {
         this.clearClock()
         hide(this.node.clockSeperator)
-        let alarmClone = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
-        if (!alarmClone) {
+        show(this.node.toggleEl)
+
+        let soundInfo = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
+
+        if (!soundInfo) {
             this.stopClock()
             return
         }
-        this.node.alarmEl.innerHTML = alarmClone
-        this.node.stopEl.classList.add("overlay")
+
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
         this.state = "alarming"
+
+        this.node.toggleEl.title = `Click to stop "${soundInfo.title}".`
+
+        let audio = this.node.audioEl
+        audio.src = soundInfo.url
+        if (audio) {
+            let volume = 1
+            audio.volume = volume / 100
+            this.audioFadeIn = setInterval(() => {
+                if (volume < 100 && audio) {
+                    volume += 1
+                    audio.volume = volume / 100
+                } else {
+                    clearInterval(this.audioFadeIn)
+                }
+            }, 1200)
+
+            audio.play()
+                .then(_ => console.log("Audio started."))
+                .catch(x => console.error("Audio failed to start.", x))
+        }
     }
 
     clearClock() {
         this.startedAt = null
-        this.node.clockEl.textContent = ""
+        this.node.countdownEl.textContent = ""
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
         this.sendNotification("clockStopped")
@@ -439,7 +476,7 @@ class Timer extends HTMLElement {
         let hours = formatTime(Math.floor(totalSeconds / 3600))
         let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
         let seconds = formatTime(totalSeconds % 60)
-        this.node.clockEl.textContent = `${hours}:${minutes}:${seconds}`
+        this.node.countdownEl.textContent = `${hours}:${minutes}:${seconds}`
     }
 
     getTotalSeconds() {
@@ -451,10 +488,10 @@ class Timer extends HTMLElement {
             return false
         }
         if (this.startedAt == null) {
-            this.startedAt = Date.now()/1e3
+            this.startedAt = Date.now() / 1e3
             this.totalTime = this.getTotalSeconds()
         }
-        let now = Date.now()/1e3
+        let now = Date.now() / 1e3
         let elapsed = now - this.startedAt
         let timeLeft = Math.round((this.totalTime ?? 0) - elapsed)
         if (timeLeft <= 0) {
@@ -491,23 +528,14 @@ function formatTime(num: number) {
 }
 
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
-function getAlarm(sound: string, allowedSounds: string[]): string | undefined {
+function getAlarm(sound: string, allowedSounds: string[]): { url: string, title: string } | undefined {
     if (sound === "random") {
         let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
         return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
     }
     let alarm = soundOptions.find(([name]) => name === sound)
     if (!alarm) return
-    return `
-    <iframe
-        width=112
-        height=63
-        style="position:relative;top:23px;"
-        src="https://www.youtube.com/embed/${alarm[2]}&autoplay=1"
-        title="Time up"
-        frameborder=0
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    ></iframe>`
+    return { url: alarm[2], title: alarm[1] }
 }
 
 function getElementById(id: string) {
