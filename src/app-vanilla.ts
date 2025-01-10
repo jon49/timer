@@ -240,6 +240,7 @@ class App extends HTMLElement {
 
 interface TimerTemplate {
     title: HTMLInputElement
+    timeEntry: HTMLFieldSetElement
     hours: HTMLInputElement
     minutes: HTMLInputElement
     seconds: HTMLInputElement
@@ -259,28 +260,32 @@ const timerTemplate = createTemplate(/*html*/`
         <span class=editable-pencil>&#9998;</span>
     </label>
 </div>
-<div>
-    <fieldset class="time-entry m-0" role="group">
-        <!-- Timer input -->
-        <input
-            class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
-        ><input
-            class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
-        ><input
-            class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
-    </fieldset>
+<div class="flex">
+
+    <div class="inline reverse">
+        <button
+            id=countdownEl
+            x=countdownEl
+            data-action=stopClock
+            hidden
+            style="width: 140px;
+            title="Click to stop."
+            aria-label="Click to stop."></button>
+
+        <fieldset x=timeEntry class="time-entry m-0" role="group">
+            <!-- Timer input -->
+            <input
+                class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
+            ><input
+                class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
+            ><input
+                class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
+        </fieldset>
+    </div>
 
     <span hidden>
         <audio x=audioEl loop></audio>
     </span>
-
-    <button
-        x=countdownEl
-        data-action=stopClock
-        hidden
-        style="width: 140px;
-        title="Click to stop."
-        aria-label="Click to stop."></button>
 
     <button x=toggleEl data-action=toggleClock>Start</button>
     <button x=restartEl data-action=restartClock>&#8635;</button>
