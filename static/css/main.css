@@ -9,7 +9,8 @@ body {
 }
 
 .time-entry {
-    max-width: 16em;
+    max-width: 9em;
+}
 
 @media only screen and (max-width: 600px) {
     #countdownEl:not([hidden])+.time-entry {
