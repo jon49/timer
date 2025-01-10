@@ -1,0 +1,36 @@
+@import url("/css/pico.min.css") layer;
+
+body {
+    padding: 1em 0.5em 50vh 0.5em;
+}
+
+.inline {
+    display: inline;
+}
+
+.time-entry {
+    max-width: 16em;
+}
+
+.m-0 {
+    margin: 0;
+}
+
+.w-auto {
+    width: auto;
+}
+
+input.plain:not(:focus) {
+    border: none;
+    background-color: transparent;
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    padding: 0;
+    outline: none;
+    appearance: textfield;
+}
+
+input.plain:focus+.editable-pencil {
+    display: none;
+}

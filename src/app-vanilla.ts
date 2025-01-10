@@ -62,7 +62,7 @@ class App extends HTMLElement {
 <label>Sound</label>
 <br>
 
-<select data-action=saveOption name=sound>
+<select class="w-auto" data-action=saveOption name=sound>
     ${soundOptions.map(([value, text]) => `
         <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>
     `).join("")}
@@ -247,28 +247,28 @@ interface TimerTemplate {
     restartEl: HTMLButtonElement
     settingsEl: HTMLButtonElement
     deleteEl: HTMLButtonElement
-    clockSeperator: HTMLSpanElement
     countdownEl: HTMLButtonElement
     audioEl: HTMLAudioElement
 }
 
 const timerTemplate = createTemplate(/*html*/`
+<section>
 <div>
     <label>
-        <input x=title data-action=save class=plain name=title type=text placeholder=Title>
+        <input x=title data-action=save class="plain w-auto" name=title type=text placeholder=Title>
         <span class=editable-pencil>&#9998;</span>
     </label>
 </div>
 <div>
-    <!-- Timer input -->
-    <input
-        class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
-    >:<input
-        class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
-    >:<input
-        class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
-
-    <span x=clockSeperator>&#9876;</span>
+    <fieldset class="time-entry m-0" role="group">
+        <!-- Timer input -->
+        <input
+            class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
+        ><input
+            class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
+        ><input
+            class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
+    </fieldset>
 
     <span hidden>
         <audio x=audioEl loop></audio>
@@ -277,7 +277,8 @@ const timerTemplate = createTemplate(/*html*/`
     <button
         x=countdownEl
         data-action=stopClock
-        class=naked
+        hidden
+        style="width: 140px;
         title="Click to stop."
         aria-label="Click to stop."></button>
 
@@ -286,7 +287,9 @@ const timerTemplate = createTemplate(/*html*/`
     <button x=settingsEl data-action=editSettings>&#9881;</button>
     <button x=deleteEl data-action=deleteTimer>❌</button>
 
-</div>`)
+</div>
+</section>
+`)
 
 
 class Timer extends HTMLElement {
@@ -364,7 +367,6 @@ class Timer extends HTMLElement {
         this.node.toggleEl.textContent = "Start"
         show(this.node.toggleEl)
         hide(this.node.restartEl)
-        hide(this.node.clockSeperator)
         this.node.audioEl.pause()
         this.clearClock()
         this.state = "stopped"
@@ -374,7 +376,6 @@ class Timer extends HTMLElement {
         // Set defaults when in "started" state
         this.node.toggleEl.textContent = "Stop"
         hide(this.node.toggleEl)
-        show(this.node.clockSeperator)
         show(this.node.restartEl)
         this.setClock()
         // Start timer
@@ -397,7 +398,6 @@ class Timer extends HTMLElement {
 
     startAlarm() {
         this.clearClock()
-        hide(this.node.clockSeperator)
         show(this.node.toggleEl)
 
         let soundInfo = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
@@ -436,6 +436,7 @@ class Timer extends HTMLElement {
     clearClock() {
         this.startedAt = null
         this.node.countdownEl.textContent = ""
+        this.node.countdownEl.hidden = true
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
         this.sendNotification("clockStopped")
@@ -477,6 +478,7 @@ class Timer extends HTMLElement {
         let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
         let seconds = formatTime(totalSeconds % 60)
         this.node.countdownEl.textContent = `${hours}:${minutes}:${seconds}`
+        this.node.countdownEl.hidden = false
     }
 
     getTotalSeconds() {
