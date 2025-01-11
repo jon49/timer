@@ -62,13 +62,15 @@ class App extends HTMLElement {
 <label>Sound</label>
 <br>
 
-<select class="w-auto" data-action=saveOption name=sound>
+<fieldset class=flex>
+<select class="w-auto m-0" data-action=saveOption name=sound>
     ${soundOptions.map(([value, text]) => `
         <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>
     `).join("")}
 </select>
 
     <button data-action=editSettings>&#9881;</button>
+</fieldset>
 </div>
 </div>`).content
 
