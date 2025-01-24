@@ -1,0 +1,20 @@
+{
+    "name": "Timer",
+    "background_color": "#333",
+    "theme_color": "#524ed2",
+    "icons": [
+        {
+            "src": "/images/timer.ico",
+            "sizes": "16x16",
+            "type": "image/ico"
+        },
+        {
+            "src": "/images/timer.png",
+            "sizes": "any",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone"
+}
