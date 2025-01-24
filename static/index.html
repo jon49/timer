@@ -10,13 +10,25 @@
     <link href="/manifest.json" rel="manifest">
 </head>
 
-<body>
+<body class="container">
 
-    <main class="container">
-        <header>
-            <h1><img src="/images/timer.svg" alt="Timer Hourglass logo" style="height: 2.5em;"></img></h1>
-        </header>
-        <div id="timer"></div>
+    <header>
+        <nav>
+            <ul>
+                <li class="pb-0 pt-0">
+                    <h1 class="m-0"><img data-action=addTimer class="pointer" src="/images/timer.svg"
+                            alt="Timer Hourglass logo" style="height: 2em;"></img></h1>
+                </li>
+                <li><button data-action=addTimer>Add Timer</button></li>
+                <li>
+                    <select id="selectSound" class="w-auto m-0" data-action=saveOption name=sound></select>
+                </li>
+                <li><button data-action=editSettings>&#9881;</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="timer">
     </main>
 
     <footer class="container">
@@ -29,7 +41,7 @@
     <div id=dialogs></div>
 
     <script type=module src="/js/app-vanilla.js"></script>
-    <script src="/js/x-dialog.js"></script>
+    <script type=module src="/js/pico-modal.js"></script>
 
 </body>
 

@@ -49,30 +49,16 @@ class App extends HTMLElement {
         }
         this.timers = this.data.timers.map(timer => new Timer(timer, this.data))
 
-        let appDom = createTemplate(`
-<div>
-<div x=timers></div>
+        let appDom = createTemplate(`<div x=timers></div>`).content
 
-<br>
-<div>
-<button data-action=addTimer>Add Timer</button>
-</div>
-<br>
-<div>
-<label>Sound</label>
-<br>
-
-<fieldset class=flex>
-<select class="w-auto m-0" data-action=saveOption name=sound>
-    ${soundOptions.map(([value, text]) => `
-        <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>
-    `).join("")}
-</select>
-
-    <button data-action=editSettings>&#9881;</button>
-</fieldset>
-</div>
-</div>`).content
+        let $soundOptions = `${soundOptions.map(([value, text]) => `
+            <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>
+        `).join("")}`
+        let $select = document.getElementById("selectSound")
+        if ($select) {
+            $select.innerHTML = $soundOptions
+            $select.addEventListener("change", this)
+        }
 
         this.$timers = (getXElements(appDom) as AppTemplate).timers
         this.$timers.append(...this.timers)
@@ -89,6 +75,7 @@ class App extends HTMLElement {
         ]) {
             this.addEventListener(event, this)
         }
+        document.addEventListener("click", this)
     }
 
     handleEvent(event: Event) {
@@ -135,27 +122,26 @@ class App extends HTMLElement {
         }
 
         let $options = `
-<x-dialog>
-    <dialog class=modal>
-        <div>
-            <h2 class=inline>Options</h2>
-            <form class=inline method=dialog>
-                <button value=Cancel>Close</button>
+<x-modal>
+    <dialog>
+        <article box>
+            <header>
+                <button form=modalClose aria-label=Close value=cancel rel=prev></button>
+                <h2 class=inline>Options</h2>
+            </header>
+            <h3>Allowed Sounds</h3>
+            <form id=allowed-sounds data-action=saveAllowedSounds>
+            ${soundOptions.slice(1).map(([value, text]) => `
+                <label>
+                    <input type=checkbox value="${value}" ${this.data.allowedSounds.includes(value) ? "checked" : ""}>
+                    ${text}
+                </label>
+            `).join("")}
             </form>
-        <div>
-        <h3>Allowed Sounds</h3>
-        <form id=allowed-sounds data-action=saveAllowedSounds>
-        ${soundOptions.slice(1).map(([value, text]) => `
-        <div>
-            <label>
-                <input type=checkbox value="${value}" ${this.data.allowedSounds.includes(value) ? "checked" : ""}>
-                ${text}
-            </label>
-        </div>
-        `).join("")}
-        </form>
+        </article>
+        <form id=modalClose class=inline method=dialog></form>
     </dialog>
-</x-dialog>`
+</x-modal>`
         dialogs.innerHTML = $options
         getElementById("allowed-sounds")?.addEventListener("change", this)
     }
@@ -206,7 +192,7 @@ class App extends HTMLElement {
 
     saveAllowedSounds(event: Event) {
         let target = event.target
-        if (!(target instanceof HTMLInputElement)) {
+        if (!(target instanceof HTMLInputElement || target instanceof HTMLLabelElement)) {
             return
         }
         this.data.allowedSounds = []
@@ -456,14 +442,13 @@ class Timer extends HTMLElement {
             return
         }
         let $options = `
-<x-dialog>
-    <dialog class=modal>
-        <div>
+<x-modal>
+    <dialog>
+    <article box>
+        <header>
+            <button form=modalClose aria-label=Close value=cancel rel=prev></button>
             <h2 class=inline>Options</h2>
-            <form class=inline method=dialog>
-                <button value=Cancel>Close</button>
-            </form>
-        <div>
+        </header>
         <label>
             Sound <br>
             <select id=option-dialog data-action=save name=sound>
@@ -473,8 +458,10 @@ class Timer extends HTMLElement {
                 `).join("")}
             </select>
         </label>
+    </article>
+    <form id=modalClose method=dialog></form>
     </dialog>
-</x-dialog>`
+</x-modal>`
         dialogs.innerHTML = $options
         getElementById("option-dialog")?.addEventListener("change", this)
     }
@@ -572,7 +559,7 @@ function setValue(input: HTMLInputElement, value: string | number) {
 
 function handleEvent(context: HTMLElement, event: Event) {
     event.stopPropagation()
-    event.preventDefault()
+    // event.preventDefault()
     let target = event.target
     if (target instanceof HTMLElement) {
         // @ts-ignore
@@ -589,3 +576,4 @@ function handleEvent(context: HTMLElement, event: Event) {
     }
 }
 
+export { }
