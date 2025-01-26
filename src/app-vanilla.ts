@@ -49,7 +49,7 @@ class App extends HTMLElement {
         }
         this.timers = this.data.timers.map(timer => new Timer(timer, this.data))
 
-        let appDom = createTemplate(`<div x=timers></div>`).content
+        let appDom = createTemplate(`<section x=timers class="grid timer-cards"></section>`).content
 
         this.$timers = (getXElements(appDom) as AppTemplate).timers
         this.$timers.append(...this.timers)
@@ -237,13 +237,13 @@ interface TimerTemplate {
 }
 
 const timerTemplate = createTemplate(/*html*/`
-<section>
-<div>
+<article>
+<header>
     <label>
         <input x=title data-action=save class="plain w-auto" name=title type=text placeholder=Title>
         <span class=editable-pencil>&#9998;</span>
     </label>
-</div>
+</header>
 <div class="flex">
 
     <div class="inline reverse">
@@ -277,7 +277,7 @@ const timerTemplate = createTemplate(/*html*/`
     <button x=deleteEl data-action=deleteTimer>❌</button>
 
 </div>
-</section>
+</article>
 `)
 
 
