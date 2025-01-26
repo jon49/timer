@@ -51,15 +51,6 @@ class App extends HTMLElement {
 
         let appDom = createTemplate(`<div x=timers></div>`).content
 
-        let $soundOptions = `${soundOptions.map(([value, text]) => `
-            <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>
-        `).join("")}`
-        let $select = document.getElementById("selectSound")
-        if ($select) {
-            $select.innerHTML = $soundOptions
-            $select.addEventListener("change", this)
-        }
-
         this.$timers = (getXElements(appDom) as AppTemplate).timers
         this.$timers.append(...this.timers)
 
@@ -124,13 +115,13 @@ class App extends HTMLElement {
         let $options = `
 <x-modal>
     <dialog>
-        <article box>
+        <article id=app-settings-edit box>
             <header>
                 <button form=modalClose aria-label=Close value=cancel rel=prev></button>
-                <h2 class=inline>Options</h2>
+                <h2 class=inline>Options for All Timers</h2>
             </header>
             <h3>Allowed Sounds</h3>
-            <form id=allowed-sounds data-action=saveAllowedSounds>
+            <form data-action=saveAllowedSounds>
             ${soundOptions.slice(1).map(([value, text]) => `
                 <label>
                     <input type=checkbox value="${value}" ${this.data.allowedSounds.includes(value) ? "checked" : ""}>
@@ -138,12 +129,17 @@ class App extends HTMLElement {
                 </label>
             `).join("")}
             </form>
+            <h3><label class for=sound-all>Specific Sound</label></h3>
+            <select id=sound-all class="w-auto m-0" data-action=saveOption name=sound>
+                ${soundOptions.map(([value, text]) => `
+                <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>`).join("")}
+            </select>
         </article>
         <form id=modalClose class=inline method=dialog></form>
     </dialog>
 </x-modal>`
         dialogs.innerHTML = $options
-        getElementById("allowed-sounds")?.addEventListener("change", this)
+        getElementById("app-settings-edit")?.addEventListener("change", this)
     }
 
     timerUpdated(event: Event) {
