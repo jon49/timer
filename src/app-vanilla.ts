@@ -244,7 +244,7 @@ const timerTemplate = createTemplate(/*html*/`
         <span class=editable-pencil>&#9998;</span>
     </label>
 </header>
-<div class="flex">
+<div class="flex justify-between">
 
     <div class="inline reverse">
         <button
@@ -271,10 +271,12 @@ const timerTemplate = createTemplate(/*html*/`
         <audio x=audioEl loop></audio>
     </span>
 
-    <button x=toggleEl data-action=toggleClock>Start</button>
-    <button x=restartEl data-action=restartClock>&#8635;</button>
-    <button x=settingsEl data-action=editSettings>&#9881;</button>
-    <button x=deleteEl data-action=deleteTimer>❌</button>
+    <div class="flex">
+        <button x=toggleEl data-action=toggleClock>Start</button>
+        <button x=restartEl data-action=restartClock>&#8635;</button>
+        <button x=settingsEl data-action=editSettings>&#9881;</button>
+        <button x=deleteEl data-action=deleteTimer>❌</button>
+    </div>
 
 </div>
 </article>

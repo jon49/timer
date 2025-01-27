@@ -21,6 +21,7 @@ body {
 .flex {
     display: flex;
     column-gap: 1ch;
+    min-width: min-content;
 }
 
 .reverse {
@@ -67,6 +68,18 @@ input.plain:focus+.editable-pencil {
     cursor: pointer;
 }
 
+.clock {
+    width: 3ch;
+}
+
+.clock:focus {
+    width: 8ch;
+}
+
 .timer-cards {
-    grid-template-columns: repeat(auto-fill, 600px);
+    grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+}
+
+.justify-between {
+    justify-content: space-between;
 }
