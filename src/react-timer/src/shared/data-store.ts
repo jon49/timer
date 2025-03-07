@@ -40,6 +40,12 @@ class TimerStore {
         return this.data.timers.find(t => t.id == id) ?? { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
     }
 
+    getTotalTime(id: number) {
+        let timer = this.data.timers.find(t => t.id === id)
+        if (!timer) return 0
+        return timer.hours * 3600 + timer.minutes * 60 + timer.seconds
+    }
+
     get timerIds() {
         return this.data.timers.map(t => t.id)
     }
@@ -49,26 +55,26 @@ class TimerStore {
     }
 }
 
-let store = new TimerStore()
+export let timerStore = new TimerStore()
 
 export function useTimers(): [number[], (timerIds: number[]) => void] {
-    let [timerIds, setTimerIds] = useState(store.timerIds)
+    let [timerIds, setTimerIds] = useState(timerStore.timerIds)
     subscribe("newTimer", () => {
-        let timer: TimerData = { id: newId(store.timerIds), hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
-        store.updateTimer(timer)
-        setTimerIds(store.timerIds)
+        let timer: TimerData = { id: newId(timerStore.timerIds), hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
+        timerStore.updateTimer(timer)
+        setTimerIds(timerStore.timerIds)
     }, [])
     subscribe("deleteTimer", (id: number) => {
-        store.deleteTimer(id)
-        setTimerIds(store.timerIds)
+        timerStore.deleteTimer(id)
+        setTimerIds(timerStore.timerIds)
     }, [])
     return [timerIds, setTimerIds]
 }
 
 export function useTimer(id: number): [TimerData, (timer: TimerData) => void] {
-    let [timer, setTimer] = useState(store.getTimer(id))
+    let [timer, setTimer] = useState(timerStore.getTimer(id))
     return [timer, (timer: TimerData) => {
-        store.updateTimer(timer)
+        timerStore.updateTimer(timer)
         setTimer(timer)
     }]
 }
