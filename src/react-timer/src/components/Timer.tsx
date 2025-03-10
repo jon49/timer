@@ -3,8 +3,8 @@ import { timerStore, useTimer } from "../shared/data-store"
 import { publish, subscribe } from "../shared/messaging"
 import { tickCoordinator } from "../shared/tick-coordinator"
 
-function formatTime(time: number) {
-    if (!time) return ""
+function formatTime(time: number, defaultValue = "") {
+    if (!time) return defaultValue
     return ("" + time).padStart(2, "0")
 }
 
@@ -37,7 +37,7 @@ export function Timer({ id }: { id: number }) {
     subscribe("clockStopped", (timerId: number) => {
         if (timerId !== id) return
         setTimerState("stopped")
-    })
+    }, [])
 
     return (
         <>
@@ -62,7 +62,7 @@ export function Timer({ id }: { id: number }) {
 
                 <div className="flex">
                     <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState !== "stopped"}>Start</button>
-                    <button onClick={() => publish("restarted", id)} hidden={timerState === "stopped"}>&#8635;</button>
+                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState === "stopped"}>&#8635;</button>
                     {/* x=settingsEl */}
                     <button data-action="editSettings">&#9881;</button>
                     <button onClick={() => publish("deleteTimer", id)}>❌</button>
@@ -76,51 +76,78 @@ export function Timer({ id }: { id: number }) {
 function CountDownTimer({ id }: { id: number }) {
     let audioEl = useRef<HTMLAudioElement>(null)
     let [timerState, setTimerState] = useState<TimerState>("stopped")
+    let [clockStartedTime, setClockStartedTime] = useState(0)
     let [timeLeft, setTimeLeft] = useState(0)
+    let [totalTime, setTotalTime] = useState(0)
+    let [timeoutId, setTimeoutId] = useState<number | null>(null)
 
     function tick() {
-        setTimeLeft(timeLeft - 1)
+        let timeElapsed = Math.floor((Date.now() - clockStartedTime) / 1e3)
+        console.log("Time Left", timeLeft)
+        console.log("TIME ELAPSED", timeElapsed, clockStartedTime)
+        let newTimeLeft = totalTime - timeElapsed
+        setTimeLeft(newTimeLeft)
     }
 
     subscribe("clockStarted", (timerId: number) => {
         if (timerId !== id) return
-        setTimeLeft(timerStore.getTotalTime(id))
+        let now = Date.now()
+        let totalTime = timerStore.getTotalTime(id)
+        setTotalTime(totalTime)
+        setClockStartedTime(now)
         setTimerState("running")
-        tickCoordinator.subscribe(tick)
-    }, [])
+        tickCoordinator.subscribe(id, tick)
+        setTimeoutId(setTimeout(() => publish("clockAlarm", id), totalTime * 1e3))
+    }, [], () => { tickCoordinator.unsubscribe(id); timeoutId && clearTimeout(timeoutId) })
 
     subscribe("clockRestarted", (timerId: number) => {
         if (timerId !== id) return
-        setTimerState("running")
-        setTimeLeft(timerStore.getTotalTime(id))
-        tickCoordinator.subscribe(tick)
-    })
+        publish("clockStopped", id)
+        publish("clockStarted", id)
+    }, [])
 
     subscribe("clockAlarm", (timerId: number) => {
         if (timerId !== id) return
+        tickCoordinator.unsubscribe(id)
+        setTimeoutId(null)
         setTimerState("alarm")
         audioEl?.current?.play()
-    })
+        console.log("alarm")
+    }, [])
 
     subscribe("clockStopped", (timerId: number) => {
         if (timerId !== id) return
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+        }
         setTimerState("stopped")
         audioEl?.current?.pause()
-        tickCoordinator.unsubscribe(tick)
-    })
+        tickCoordinator.unsubscribe(id)
+    }, [])
 
     return (
         <>
             <button
                 onClick={() => publish("clockStopped", id)}
-                hidden={timerState !== "running"}
+                hidden={timerState !== "running" && timerState !== "alarm"}
                 style={{ width: "140px" }}
                 title="Click to stop."
-                aria-label="Click to stop.">{}</button>
+                aria-label="Click to stop.">{(() => {
+                    if (timerState === "alarm") return "Alarm!"
+                    return formatClock(timeLeft)
+                })()}</button>
 
             <span hidden>
                 <audio ref={audioEl} loop></audio>
             </span>
         </>
     )
+}
+
+function formatClock(time: number): string {
+    if (time < 1) return "00:00:00"
+    let hours = Math.floor(time / 3600)
+    let minutes = Math.floor((time % 3600) / 60)
+    let seconds = time % 60
+    return `${formatTime(hours, "00")}:${formatTime(minutes, "00")}:${formatTime(seconds, "00")}`
 }

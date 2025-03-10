@@ -1,17 +1,17 @@
 class TickCoordinator {
     private intervalId: number | null = null
-    private subscribers: (() => void)[] = []
+    private subscribers: Map<number, () => void> = new Map
 
-    subscribe(subscriber: () => void) {
-        this.subscribers.push(subscriber)
+    subscribe(id: number, subscriber: () => void) {
+        this.subscribers.set(id, subscriber)
         if (!this.intervalId) {
             this.intervalId = setInterval(() => this.tick(), 1e3)
         }
     }
 
-    unsubscribe(subscriber: (id: number) => void) {
-        this.subscribers = this.subscribers.filter(s => s !== subscriber)
-        if (!this.subscribers.length && this.intervalId) {
+    unsubscribe(id: number) {
+        this.subscribers.delete(id)
+        if (this.subscribers.size === 0 && this.intervalId) {
             clearInterval(this.intervalId)
             this.intervalId = null
         }

@@ -30,9 +30,7 @@ function App() {
 
       <main id="timer">
         <section className="grid timer-cards">
-          <ul>
             {timerIds.map(id => <article key={id}><Timer id={id} /></article>)}
-          </ul>
         </section>
       </main>
 
