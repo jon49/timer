@@ -16,7 +16,7 @@ export function Timer({ id }: { id: number }) {
     let [hours, setHours] = useState(timer.hours)
     let [minutes, setMinutes] = useState(timer.minutes)
     let [seconds, setSeconds] = useState(timer.seconds)
-    let [, setTimerState, timerState] = useStateRef<TimerState>("stopped")
+    let [timerState, setTimerState] = useState<TimerState>("stopped")
 
     let hourDisplay = () => formatTime(hours)
     let minuteDisplay = () => formatTime(minutes)
@@ -67,8 +67,8 @@ export function Timer({ id }: { id: number }) {
                 </div>
 
                 <div className="flex">
-                    <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState.current !== "stopped"}>Start</button>
-                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState.current === "stopped"}>&#8635;</button>
+                    <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState !== "stopped"}>Start</button>
+                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState === "stopped"}>&#8635;</button>
                     {/* x=settingsEl */}
                     <button data-action="editSettings">&#9881;</button>
                     <button onClick={() => publish("deleteTimer", id)}>❌</button>
