@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import { timerStore, useTimer } from "../shared/data-store"
 import { publish, subscribe } from "../shared/messaging"
 import { tickCoordinator } from "../shared/tick-coordinator"
+import useStateRef from "react-usestateref"
 
 function formatTime(time: number, defaultValue = "") {
     if (!time) return defaultValue
@@ -15,7 +16,7 @@ export function Timer({ id }: { id: number }) {
     let [hours, setHours] = useState(timer.hours)
     let [minutes, setMinutes] = useState(timer.minutes)
     let [seconds, setSeconds] = useState(timer.seconds)
-    let [timerState, setTimerState] = useState<TimerState>("stopped")
+    let [, setTimerState, timerState] = useStateRef<TimerState>("stopped")
 
     let hourDisplay = () => formatTime(hours)
     let minuteDisplay = () => formatTime(minutes)
@@ -37,6 +38,11 @@ export function Timer({ id }: { id: number }) {
     subscribe("clockStopped", (timerId: number) => {
         if (timerId !== id) return
         setTimerState("stopped")
+    }, [])
+
+    subscribe("clockStarted", (timerId: number) => {
+        if (timerId !== id) return
+        setTimerState("running")
     }, [])
 
     return (
@@ -61,8 +67,8 @@ export function Timer({ id }: { id: number }) {
                 </div>
 
                 <div className="flex">
-                    <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState !== "stopped"}>Start</button>
-                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState === "stopped"}>&#8635;</button>
+                    <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState.current !== "stopped"}>Start</button>
+                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState.current === "stopped"}>&#8635;</button>
                     {/* x=settingsEl */}
                     <button data-action="editSettings">&#9881;</button>
                     <button onClick={() => publish("deleteTimer", id)}>❌</button>
@@ -75,30 +81,30 @@ export function Timer({ id }: { id: number }) {
 
 function CountDownTimer({ id }: { id: number }) {
     let audioEl = useRef<HTMLAudioElement>(null)
-    let [timerState, setTimerState] = useState<TimerState>("stopped")
-    let [clockStartedTime, setClockStartedTime] = useState(0)
-    let [timeLeft, setTimeLeft] = useState(0)
-    let [totalTime, setTotalTime] = useState(0)
-    let [timeoutId, setTimeoutId] = useState<number | null>(null)
+    let [, setTimerState, timerState] = useStateRef<TimerState>("stopped")
+    let [, setClockStartedTime, clockStartedTime] = useStateRef(0)
+    let [, setTotalTime, totalTimeRef] = useStateRef(0)
+    let [, setTimeLeft, timeLeft] = useStateRef(0)
+    let [, setTimeoutId, timeoutId] = useStateRef<number | null>(null)
 
-    function tick() {
-        let timeElapsed = Math.floor((Date.now() - clockStartedTime) / 1e3)
-        console.log("Time Left", timeLeft)
-        console.log("TIME ELAPSED", timeElapsed, clockStartedTime)
-        let newTimeLeft = totalTime - timeElapsed
+    function tick(now: number) {
+        let timeElapsed = Math.floor(now - clockStartedTime.current)
+        let newTimeLeft = totalTimeRef.current - timeElapsed
+        console.log("NEW TIME LEFT", newTimeLeft)
         setTimeLeft(newTimeLeft)
     }
 
     subscribe("clockStarted", (timerId: number) => {
         if (timerId !== id) return
-        let now = Date.now()
+        let now = Math.floor(Date.now() / 1e3)
         let totalTime = timerStore.getTotalTime(id)
         setTotalTime(totalTime)
         setClockStartedTime(now)
         setTimerState("running")
+        setTimeLeft(totalTime)
         tickCoordinator.subscribe(id, tick)
         setTimeoutId(setTimeout(() => publish("clockAlarm", id), totalTime * 1e3))
-    }, [], () => { tickCoordinator.unsubscribe(id); timeoutId && clearTimeout(timeoutId) })
+    }, [], () => { tickCoordinator.unsubscribe(id); timeoutId.current && clearTimeout(timeoutId.current) })
 
     subscribe("clockRestarted", (timerId: number) => {
         if (timerId !== id) return
@@ -117,8 +123,8 @@ function CountDownTimer({ id }: { id: number }) {
 
     subscribe("clockStopped", (timerId: number) => {
         if (timerId !== id) return
-        if (timeoutId) {
-            clearTimeout(timeoutId)
+        if (timeoutId.current) {
+            clearTimeout(timeoutId.current)
         }
         setTimerState("stopped")
         audioEl?.current?.pause()
@@ -129,12 +135,12 @@ function CountDownTimer({ id }: { id: number }) {
         <>
             <button
                 onClick={() => publish("clockStopped", id)}
-                hidden={timerState !== "running" && timerState !== "alarm"}
+                hidden={timerState.current !== "running" && timerState.current !== "alarm"}
                 style={{ width: "140px" }}
                 title="Click to stop."
                 aria-label="Click to stop.">{(() => {
-                    if (timerState === "alarm") return "Alarm!"
-                    return formatClock(timeLeft)
+                    if (timerState.current === "alarm") return "Alarm!"
+                    return formatClock(timeLeft.current)
                 })()}</button>
 
             <span hidden>
