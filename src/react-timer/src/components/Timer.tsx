@@ -4,6 +4,20 @@ import { publish, subscribe } from "../shared/messaging"
 import { tickCoordinator } from "../shared/tick-coordinator"
 import useStateRef from "react-usestateref"
 
+let soundOptions = [
+    ["random", "Random"],
+    ["explosion", "Explosion", "/media/Explosion+2.wav"],
+    ["forest", "Forest", "/media/forest.wav"],
+    ["hag_idle", "Hag Idle", "/media/hag_idle.wav"],
+    ["monster_footsteps", "Monster Footsteps", "/media/Monster_Footsteps.wav"],
+    ["night2", "Night", "/media/night2.wav"],
+    ["rain_start", "Rain", "/media/rain_start.wav"],
+    ["sea", "Sea", "/media/sea.wav"],
+    ["swamp1", "Swamp", "/media/swamp1.wav"],
+    ["thunderrumble", "Thunder Rumble", "/media/thunderrumble.wav"],
+    ["waves", "Waves", "/media/waves.wav"],
+]
+
 export function Timer({ id }: { id: number }) {
     let [timer, setTimer] = useTimer(id)
     let [hours, setHours] = useState(timer.hours)
@@ -109,9 +123,37 @@ function CountDownTimer({ id }: { id: number }) {
         if (timerId !== id) return
         tickCoordinator.unsubscribe(id)
         setTimeoutId(null)
+
+        let timer = timerStore.getTimer(id)
+        let info = timerStore.data
+        let soundInfo = getAlarm(timer.sound || info.sound, info.allowedSounds)
+        if (!soundInfo) return
+
+        if (timeoutId.current) {
+            clearTimeout(timeoutId.current)
+        }
+        setTimeoutId(null)
+
+        let audio = audioEl.current
+        if (!audio) return
+        audio.title = soundInfo.title
+        audio.src = soundInfo.url
+        let volume = 1
+        audio.volume = volume / 100
+        let audioFadeIn = setInterval(() => {
+            if (volume < 100 && audio) {
+                volume += 1
+                audio.volume = volume / 100
+            } else {
+                clearInterval(audioFadeIn)
+            }
+        }, 1200)
+
+        audio.play()
+            .then(_ => console.log("Audio started."))
+            .catch(x => console.error("Audio failed to start.", x))
+
         setTimerState("alarm")
-        audioEl?.current?.play()
-        console.log("alarm")
     }, [])
 
     subscribe("clockStopped", (timerId: number) => {
@@ -130,9 +172,11 @@ function CountDownTimer({ id }: { id: number }) {
                 onClick={() => publish("clockStopped", id)}
                 hidden={timerState.current !== "running" && timerState.current !== "alarm"}
                 style={{ width: "140px" }}
-                title="Click to stop."
+                title={timerState.current === "alarm" ? audioEl.current?.title : "Click to stop."}
                 aria-label="Click to stop.">{(() => {
-                    if (timerState.current === "alarm") return "Alarm!"
+                    if (timerState.current === "alarm") {
+                        return "Stop"
+                    }
                     return formatClock(timeLeft.current)
                 })()}</button>
 
@@ -154,6 +198,17 @@ function formatClock(time: number): string {
 function formatTime(time: number, defaultValue = "") {
     if (!time) return defaultValue
     return ("" + time).padStart(2, "0")
+}
+
+let alarmIds = soundOptions.slice(1).map(([value]) => value)
+function getAlarm(sound: string, allowedSounds: string[]): { url: string, title: string } | undefined {
+    if (sound === "random") {
+        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
+        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
+    }
+    let alarm = soundOptions.find(([name]) => name === sound)
+    if (!alarm) return
+    return { url: alarm[2], title: alarm[1] }
 }
 
 type TimerState = "stopped" | "running" | "alarm"
