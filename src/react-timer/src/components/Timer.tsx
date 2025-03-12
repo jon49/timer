@@ -4,13 +4,6 @@ import { publish, subscribe } from "../shared/messaging"
 import { tickCoordinator } from "../shared/tick-coordinator"
 import useStateRef from "react-usestateref"
 
-function formatTime(time: number, defaultValue = "") {
-    if (!time) return defaultValue
-    return ("" + time).padStart(2, "0")
-}
-
-type TimerState = "stopped" | "running" | "alarm"
-
 export function Timer({ id }: { id: number }) {
     let [timer, setTimer] = useTimer(id)
     let [hours, setHours] = useState(timer.hours)
@@ -157,3 +150,10 @@ function formatClock(time: number): string {
     let seconds = time % 60
     return `${formatTime(hours, "00")}:${formatTime(minutes, "00")}:${formatTime(seconds, "00")}`
 }
+
+function formatTime(time: number, defaultValue = "") {
+    if (!time) return defaultValue
+    return ("" + time).padStart(2, "0")
+}
+
+type TimerState = "stopped" | "running" | "alarm"
