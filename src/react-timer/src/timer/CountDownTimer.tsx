@@ -17,7 +17,6 @@ export function CountDownTimer({ id }: { id: number }) {
     function tick(now: number) {
         let timeElapsed = Math.floor(now - clockStartedTime.current)
         let newTimeLeft = totalTimeRef.current - timeElapsed
-        console.log("NEW TIME LEFT", newTimeLeft)
         setTimeLeft(newTimeLeft)
     }
 
@@ -70,7 +69,6 @@ export function CountDownTimer({ id }: { id: number }) {
         }, 1200)
 
         audio.play()
-            .then(_ => console.log("Audio started."))
             .catch(x => console.error("Audio failed to start.", x))
 
         setTimerState("alarm")
