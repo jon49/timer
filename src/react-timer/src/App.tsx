@@ -35,9 +35,9 @@ function App() {
       </main>
 
       <footer className="container">
-        <a href="https://github.com/jon49/timer">Source Code</a>
+        <a href="https://github.com/jon49/timer/tree/master/src/react-timer">Source Code</a>
         <br />
-        <small> Created with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">Custom Elements</a>.</small>
+        <small> Created with <a href="https://react.dev/">React JS</a>.</small>
         <br />
         <small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
       </footer>
