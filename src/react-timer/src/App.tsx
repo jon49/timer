@@ -1,6 +1,7 @@
-import { Timer } from './components/Timer'
+import { Timer } from './timer/Timer'
 import { useTimers } from './shared/data-store'
 import { publish } from './shared/messaging'
+import { GlobalSettings } from './timer/GlobalSettings'
 
 function addTimer() {
   publish("newTimer")
@@ -23,7 +24,7 @@ function App() {
           </ul>
           <ul>
             <li><button onClick={addTimer}>Add Timer</button></li>
-            <li><button data-action="editSettings">&#9881;</button></li>
+            <li><GlobalSettings /></li>
           </ul>
         </nav>
       </header>

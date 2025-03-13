@@ -71,6 +71,16 @@ export function useTimers(): [number[], (timerIds: number[]) => void] {
     return [timerIds, setTimerIds]
 }
 
+export function useAllowedSounds(): [string[], (sounds: string[]) => void] {
+    let [sounds, setSounds] = useState(timerStore.data.allowedSounds)
+    let update = (sounds: string[]) => {
+        timerStore.data.allowedSounds = sounds
+        timerStore.save()
+        setSounds(sounds)
+    }
+    return [sounds, update]
+}
+
 export function useTimer(id: number): [TimerData, (timer: TimerData) => void] {
     let [timer, setTimer] = useState(timerStore.getTimer(id))
     return [timer, (timer: TimerData) => {
