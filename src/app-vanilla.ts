@@ -284,13 +284,13 @@ const timerTemplate = createTemplate(/*html*/`
 
 
 class Timer extends HTMLElement {
-
     cache: Map<string, HTMLElement>
     timer: TimerData
     info: TimerInfo
     startedAt: number | null
     totalTime: number | null
     timeoutId: number | undefined
+    alarmTimeoutId: number | undefined
     node: TimerTemplate
     state: "stopped" | "started" | "alarming" = "stopped"
     audioFadeIn: number | undefined
@@ -355,6 +355,7 @@ class Timer extends HTMLElement {
     stopClock() {
         // Set defaults when in "stopped" state
         clearInterval(this.audioFadeIn)
+        clearTimeout(this.alarmTimeoutId)
         this.node.toggleEl.textContent = "Start"
         show(this.node.toggleEl)
         hide(this.node.restartEl)
@@ -419,7 +420,8 @@ class Timer extends HTMLElement {
             }, 1200)
 
             audio.play()
-                .then(_ => console.log("Audio started."))
+                // Stop alarm after 1 minute.
+                .then(_ => { this.alarmTimeoutId = setTimeout(() => this.stopClock(), 60e3) })
                 .catch(x => console.error("Audio failed to start.", x))
         }
     }
