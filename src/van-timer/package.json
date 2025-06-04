@@ -1,0 +1,19 @@
+{
+  "name": "van-timer",
+  "version": "1.0.0",
+  "description": "Timer implementation using VanJS",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/van --base /van/"
+  },
+  "keywords": [
+    "vanjs"
+  ],
+  "author": "Jon Nyman",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
