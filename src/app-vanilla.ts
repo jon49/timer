@@ -290,7 +290,7 @@ class Timer extends HTMLElement {
     startedAt: number | null
     totalTime: number | null
     timeoutId: number | undefined
-    alarmTimeoutId: number | undefined
+    alarmTimeoutId: number | undefined | null
     node: TimerTemplate
     state: "stopped" | "started" | "alarming" = "stopped"
     audioFadeIn: number | undefined
@@ -355,7 +355,8 @@ class Timer extends HTMLElement {
     stopClock() {
         // Set defaults when in "stopped" state
         clearInterval(this.audioFadeIn)
-        clearTimeout(this.alarmTimeoutId)
+        if (this.alarmTimeoutId) clearTimeout(this.alarmTimeoutId)
+        this.alarmTimeoutId = null
         this.node.toggleEl.textContent = "Start"
         show(this.node.toggleEl)
         hide(this.node.restartEl)
@@ -399,6 +400,8 @@ class Timer extends HTMLElement {
             return
         }
 
+        if (this.alarmTimeoutId) clearTimeout(this.alarmTimeoutId)
+
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
         this.state = "alarming"
@@ -421,7 +424,7 @@ class Timer extends HTMLElement {
 
             audio.play()
                 // Stop alarm after 1 minute.
-                .then(_ => { this.alarmTimeoutId = setTimeout(() => this.stopClock(), 60e3) })
+                .then(_ => { this.alarmTimeoutId = setTimeout(() => this.stopClock(), 120e3) })
                 .catch(x => console.error("Audio failed to start.", x))
         }
     }
