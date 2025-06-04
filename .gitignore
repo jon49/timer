@@ -3,4 +3,5 @@ media
 dist
 static/images/*
 src/react-timer/public/images/*
+src/van-timer/public/images/*
 !timer.svg
