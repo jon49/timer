@@ -5,7 +5,7 @@
     "start:stage-left": "npx esbuild --bundle --format=iife src/app-stage-left.ts --outfile=docs/js/app-stage-left.js --servedir=docs --watch",
     "start:vanilla": "./tasks/build.sh && npx esbuild --bundle --format=iife src/app-vanilla.ts --outfile=dist/js/app-vanilla.js --servedir=dist --watch",
     "build:docs": "npx esbuild src/app-stage-left.ts src/app-van.ts src/app-vanilla.ts --bundle --format=esm --outdir=docs/js/ --minify",
-    "build": "npx esbuild src/app-stage-left.ts src/app-van.ts src/app-vanilla.ts --bundle --format=esm --outdir=dist/js/ --minify && cd src/react-timer/ && npm run build && cd -"
+    "build": "npx esbuild src/app-stage-left.ts src/app-van.ts src/app-vanilla.ts --bundle --format=esm --outdir=dist/js/ --minify && cd src/react-timer/ && npm run build && cd - && cd src/van-timer/ && npm run build && cd -"
   },
   "dependencies": {
     "serve": "^14.2.1",
