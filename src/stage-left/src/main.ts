@@ -38,7 +38,7 @@ class App extends HTMLElement {
     data: TimerInfo
     timers: Timer[]
     $timers: HTMLDivElement
-    interval: number | null
+    interval: number | null = null
 
     constructor() {
         super()
@@ -98,12 +98,16 @@ class App extends HTMLElement {
             // @ts-ignore
             let action = target.dataset.action || target.closest('[data-action]')?.dataset?.action
             if (action) {
+                // @ts-ignore
                 if (this[action] instanceof Function) {
+                    // @ts-ignore
                     this[action](event)
                 } else {
                     console.error(`Action ${action} not implemented.`)
                 }
+            // @ts-ignore
             } else if (this[event.type] instanceof Function) {
+                // @ts-ignore
                 this[event.type](event)
             }
         }
@@ -302,8 +306,8 @@ class Timer extends HTMLElement {
     cache: Map<string, HTMLElement>
     timer: TimerData
     info: TimerInfo
-    startedAt: number | null
-    totalTime: number | null
+    startedAt: number | null = null
+    totalTime: number | null = null
     timeoutId: number | undefined
     node: Pick<TimerTemplate, "startEl" | "restartEl" | "stopEl" | "settingsEl" | "deleteEl" | "alarmEl">
             & {clockEl: HTMLButtonElement}
@@ -334,7 +338,9 @@ class Timer extends HTMLElement {
         if (target instanceof HTMLElement) {
             let action = target.dataset.action
             if (action) {
+                // @ts-ignore
                 if (this[action] instanceof Function) {
+                    // @ts-ignore
                     this[action](event)
                 } else {
                     console.error(`Action ${action} not implemented.`)

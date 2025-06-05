@@ -1,0 +1,16 @@
+{
+  "name": "stage-left-timer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/stage-left --base /stage-left/"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

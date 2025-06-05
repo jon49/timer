@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Timer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/main.css" rel="stylesheet">
+    <link href="/images/timer.ico" rel="icon" type="image/x-icon">
+    <link href="/manifest.json" rel="manifest">
+</head>
+
+<body class="container">
+
+    <header>
+        <nav>
+            <ul>
+                <li class="pb-0 pt-0">
+                    <h1 class="m-0"><img data-action=addTimer class="pointer" src="/images/timer.svg"
+                            alt="Timer Hourglass logo" style="height: 2em; width: 1.56em;"></img></h1>
+                </li>
+            </ul>
+            <ul>
+                <li><button data-action=addTimer>Add Timer</button></li>
+                <li><button data-action=editSettings>&#9881;</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="timer">
+    </main>
+
+    <footer class="container">
+        <a href="https://github.com/jon49/timer">Source Code</a>
+        <br><small> Created with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">Custom
+                Elements</a>.</small>
+        <br><small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
+    </footer>
+
+    <div id=dialogs></div>
+
+    <script type=module src="/src/main.ts"></script>
+    <script type=module src="/js/pico-modal.js"></script>
+
+</body>
+
+</html>

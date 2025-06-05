@@ -11,8 +11,10 @@ function collector(node: Node): PropertyAttributes | 0 {
                 : []
             const name = attr.value
             if (name in values) {
+                // @ts-ignore
                 values[name].push(...attrs)
             } else {
+                // @ts-ignore
                 values[name] = attrs
             }
             node.removeAttribute(aName)
@@ -116,6 +118,7 @@ class Template<T> {
       ?.forEach(idx => {
         const n = this._nodes[idx]
         if (n instanceof Text) {
+          // @ts-ignore
           n.nodeValue = o[key]
         } else if (n instanceof HTMLElement) {
           const attrs = this._refPaths.refs[idx]
@@ -123,6 +126,7 @@ class Template<T> {
            * @param {string} x
            */
           if (attrs[key]) {
+            // @ts-ignore
             attrs[key].forEach(x => x === "text" ? n.textContent = o[key] : n.setAttribute(x, o[key]))
           } else { console.error(`Key '${key}' value not defined.`) }
         }

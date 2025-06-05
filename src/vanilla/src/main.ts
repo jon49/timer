@@ -39,7 +39,7 @@ class App extends HTMLElement {
     data: TimerInfo
     timers: Timer[]
     $timers: HTMLDivElement
-    interval: number | null
+    interval: number | null = null
 
     constructor() {
         super()
@@ -287,8 +287,8 @@ class Timer extends HTMLElement {
     cache: Map<string, HTMLElement>
     timer: TimerData
     info: TimerInfo
-    startedAt: number | null
-    totalTime: number | null
+    startedAt: number | null = null
+    totalTime: number | null = null
     timeoutId: number | undefined
     alarmTimeoutId: number | undefined | null
     node: TimerTemplate
@@ -544,6 +544,7 @@ function getElementById(id: string) {
 function getXElements(fragment: DocumentFragment) {
     let o = {}
     for (let el of fragment.querySelectorAll(`[x]`)) {
+        // @ts-ignore
         o[el.getAttribute('x') || ''] = el
         el.removeAttribute('x')
     }
@@ -568,12 +569,16 @@ function handleEvent(context: HTMLElement, event: Event) {
         // @ts-ignore
         let action = target.dataset.action || target.closest('[data-action]')?.dataset?.action
         if (action) {
+            // @ts-ignore
             if (context[action] instanceof Function) {
+                // @ts-ignore
                 context[action](event)
             } else {
                 console.error(`Action ${action} not implemented.`)
             }
+        // @ts-ignore
         } else if (context[event.type] instanceof Function) {
+            // @ts-ignore
             context[event.type](event)
         }
     }

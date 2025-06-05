@@ -1,0 +1,16 @@
+{
+  "name": "vanillajs-timer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/vanilla --base /vanilla/"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
