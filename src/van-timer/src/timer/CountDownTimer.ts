@@ -15,6 +15,7 @@ export function CountDownTimer(id: number) {
     let totalTime = state(0)
     let timeLeft = state(0)
     let timeoutId = state<number | null>(null)
+    let alarmTimeoutId: number | null = null
 
     function tick(now: number) {
         let timeElapsed = Math.floor(now - clockStartedTime.rawVal)
@@ -58,13 +59,16 @@ export function CountDownTimer(id: number) {
         let volume = 1
         audioEl.volume = volume / 100
         let audioFadeIn = setInterval(() => {
-            if (volume < 100 && audioEl) {
+            if (audioEl && volume < 100) {
                 volume += 1
                 audioEl.volume = volume / 100
             } else {
                 clearInterval(audioFadeIn)
             }
         }, 1200)
+
+        // Stop audio after 2 minutes
+        alarmTimeoutId = setTimeout(() => publish("clockStopped", id), 12e4)
 
         audioEl.play()
             .catch(x => console.error("Audio failed to start.", x))
@@ -76,6 +80,10 @@ export function CountDownTimer(id: number) {
         if (timerId !== id) return
         if (timeoutId.val) {
             clearTimeout(timeoutId.val)
+        }
+        if (alarmTimeoutId) {
+            clearTimeout(alarmTimeoutId)
+            alarmTimeoutId = null
         }
         timerState.val = "stopped"
         audioEl.pause()
