@@ -90,8 +90,10 @@ export function CountDownTimer(id: number) {
         tickCoordinator.unsubscribe(id)
     }, id)
 
+    let $timer: HTMLButtonElement
+
     return [
-        button({
+        ($timer = button({
             onclick: () => publish("clockStopped", id),
             hidden: () => timerState.val !== "running" && timerState.val !== "alarm",
             style: "width: 140px",
@@ -99,10 +101,11 @@ export function CountDownTimer(id: number) {
             ariaLabel: "Click to stop."
         }, () => {
             if (timerState.val === "alarm") {
+                $timer.focus()
                 return "Stop"
             }
             return formatClock(timeLeft.val)
-        }),
+        })),
         span({ hidden: true }, audioEl)
     ]
 }
