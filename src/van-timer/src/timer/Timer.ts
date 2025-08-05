@@ -6,7 +6,7 @@ import { CountDownTimer } from "./CountDownTimer"
 import van from "vanjs-core"
 
 let { button, div, fieldset, header, input, label, span } = van.tags
-let { state, derive } = van
+let { state } = van
 
 export function Timer(id: number) {
     let timer = useTimer(id)
