@@ -3,6 +3,7 @@ import { useTimers } from './shared/data-store'
 import { publish, subscribe } from './shared/messaging'
 import { GlobalSettings } from './timer/GlobalSettings'
 import van from "vanjs-core"
+import "./timer/TimerNavigation"
 
 let { a, article, br, button, footer, h1, header, li, main, img, nav, section, small, ul } = van.tags
 
@@ -43,8 +44,9 @@ function App() {
             )),
 
         main({ id: "timer" },
-            $timerCards = section({ class: "grid timer-cards" },
-                timerIds.map(id => createTimer(id)))),
+            $timerCards = section({
+                class: "grid timer-cards",
+            }, timerIds.map(id => createTimer(id)))),
 
         footer({ class: "container" },
             a({ href: "https://github.com/jon49/timer/tree/master/src/van-timer" }, "Source Code"),
@@ -56,4 +58,3 @@ function App() {
 }
 
 export default App
-
