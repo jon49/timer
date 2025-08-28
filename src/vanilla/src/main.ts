@@ -15,6 +15,34 @@ interface TimerData {
     sound: string | null
 }
 
+const elHandler: ProxyHandler<any> = {
+    get(obj, prop: string) {
+        if (prop[0] === "$") {
+            return obj[prop.slice(1)]
+        }
+        let val = obj[prop]
+        if (!(val instanceof HTMLElement)) return
+        if (isInputElement(val)) {
+            if (val.type === "number") {
+                return +val.value
+            }
+            return val.value
+        }
+        return val.textContent
+    },
+
+    set(obj, prop: string, newVal) {
+        let val = obj[prop]
+        if (!(val instanceof HTMLElement)) return false
+        if (isInputElement(val)) {
+            val.value = newVal
+            return true
+        }
+        val.textContent = newVal
+        return true
+    }
+}
+
 const appStateKey = "timers"
 let soundOptions = [
     ["random", "Random"],
@@ -31,7 +59,7 @@ let soundOptions = [
 ]
 
 interface AppTemplate {
-    timers: HTMLDivElement
+    $timers: HTMLDivElement
 }
 
 class App extends HTMLElement {
@@ -51,7 +79,7 @@ class App extends HTMLElement {
 
         let appDom = html`<section x=timers class="grid timer-cards"></section>`.content
 
-        this.$timers = (getXElements(appDom) as AppTemplate).timers
+        this.$timers = (getXElements(appDom) as AppTemplate).$timers
         this.$timers.append(...this.timers)
 
         this.append(appDom)
@@ -223,17 +251,29 @@ class App extends HTMLElement {
 }
 
 interface TimerTemplate {
-    title: HTMLInputElement
-    timeEntry: HTMLFieldSetElement
-    hours: HTMLInputElement
-    minutes: HTMLInputElement
-    seconds: HTMLInputElement
-    toggleEl: HTMLButtonElement
-    restartEl: HTMLButtonElement
-    settingsEl: HTMLButtonElement
-    deleteEl: HTMLButtonElement
-    countdownEl: HTMLButtonElement
-    audioEl: HTMLAudioElement
+    $title: HTMLInputElement
+    title: string
+    timer: string
+    $timeEntry: HTMLFieldSetElement
+    timeEntry: string
+    $hours: HTMLInputElement
+    hours: number | null
+    $minutes: HTMLInputElement
+    minutes: number | null
+    $seconds: HTMLInputElement
+    seconds: number | null
+    $toggle: HTMLButtonElement
+    toggle: string
+    $restart: HTMLButtonElement
+    restart: string
+    $settings: HTMLButtonElement
+    settings: string
+    $delete: HTMLButtonElement
+    delete: string
+    $countdown: HTMLButtonElement
+    countdown: string
+    $audio: HTMLAudioElement
+    audio: string
 }
 
 const timerTemplate = html`
@@ -248,8 +288,7 @@ const timerTemplate = html`
 
     <div class="inline reverse">
         <button
-            id=countdownEl
-            x=countdownEl
+            x=countdown
             data-action=stopClock
             hidden
             style="width: 140px;
@@ -268,14 +307,14 @@ const timerTemplate = html`
     </div>
 
     <span hidden>
-        <audio x=audioEl loop></audio>
+        <audio x=audio loop></audio>
     </span>
 
     <div class="flex">
-        <button x=toggleEl data-action=toggleClock>Start</button>
-        <button x=restartEl data-action=restartClock>&#8635;</button>
-        <button x=settingsEl data-action=editSettings>&#9881;</button>
-        <button x=deleteEl data-action=deleteTimer>❌</button>
+        <button x=toggle data-action=toggleClock>Start</button>
+        <button x=restart data-action=restartClock>&#8635;</button>
+        <button x=settings data-action=editSettings>&#9881;</button>
+        <button x=delete data-action=deleteTimer>❌</button>
     </div>
 
 </div>
@@ -291,7 +330,7 @@ class Timer extends HTMLElement {
     totalTime: number | null = null
     timeoutId: number | undefined
     alarmTimeoutId: number | undefined | null
-    node: TimerTemplate
+    $: TimerTemplate
     state: "stopped" | "started" | "alarming" = "stopped"
     audioFadeIn: number | undefined
 
@@ -302,12 +341,12 @@ class Timer extends HTMLElement {
         this.timer = timer
         this.info = timerInfo
         let template = timerTemplate.content.cloneNode(true) as DocumentFragment;
-        let node = this.node = getXElements(template) as TimerTemplate
+        let node = this.$ = getXElements(template) as TimerTemplate
 
-        setValue(node.title, timer.title)
-        setValue(node.hours, timer.hours || "")
-        setValue(node.minutes, timer.minutes || "")
-        setValue(node.seconds, timer.seconds || "")
+        node.title = timer.title
+        node.hours = timer.hours
+        node.minutes = timer.minutes
+        node.seconds = timer.seconds
 
         this.appendChild(template)
 
@@ -354,22 +393,24 @@ class Timer extends HTMLElement {
 
     stopClock() {
         // Set defaults when in "stopped" state
+        let $ = this.$
         clearInterval(this.audioFadeIn)
         if (this.alarmTimeoutId) clearTimeout(this.alarmTimeoutId)
         this.alarmTimeoutId = null
-        this.node.toggleEl.textContent = "Start"
-        show(this.node.toggleEl)
-        hide(this.node.restartEl)
-        this.node.audioEl.pause()
+        $.toggle = "Start"
+        show($.$toggle)
+        hide($.$restart)
+        $.$audio.pause()
         this.clearClock()
         this.state = "stopped"
     }
 
     startClock() {
         // Set defaults when in "started" state
-        this.node.toggleEl.textContent = "Stop"
-        hide(this.node.toggleEl)
-        show(this.node.restartEl)
+        let $ = this.$
+        $.toggle = "Stop"
+        hide($.$toggle)
+        show($.$restart)
         this.setClock()
         // Start timer
         this.sendNotification("clockStarted")
@@ -391,7 +432,7 @@ class Timer extends HTMLElement {
 
     startAlarm() {
         this.clearClock()
-        show(this.node.toggleEl)
+        show(this.$.$toggle)
 
         let soundInfo = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
 
@@ -406,9 +447,9 @@ class Timer extends HTMLElement {
         this.timeoutId = void 0
         this.state = "alarming"
 
-        this.node.toggleEl.title = `Click to stop "${soundInfo.title}".`
+        this.$.$toggle.title = `Click to stop "${soundInfo.title}".`
 
-        let audio = this.node.audioEl
+        let audio = this.$.$audio
         audio.src = soundInfo.url
         if (audio) {
             let volume = 1
@@ -430,9 +471,10 @@ class Timer extends HTMLElement {
     }
 
     clearClock() {
+        let $ = this.$
         this.startedAt = null
-        this.node.countdownEl.textContent = ""
-        this.node.countdownEl.hidden = true
+        $.countdown = ""
+        hide($.$countdown)
         clearTimeout(this.timeoutId)
         this.timeoutId = void 0
         this.sendNotification("clockStopped")
@@ -474,8 +516,8 @@ class Timer extends HTMLElement {
         let hours = formatTime(Math.floor(totalSeconds / 3600))
         let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
         let seconds = formatTime(totalSeconds % 60)
-        this.node.countdownEl.textContent = `${hours}:${minutes}:${seconds}`
-        this.node.countdownEl.hidden = false
+        this.$.countdown = `${hours}:${minutes}:${seconds}`
+        show(this.$.$countdown)
     }
 
     getTotalSeconds() {
@@ -515,11 +557,19 @@ let $timer = getElementById("timer")
 $timer?.append(new App())
 
 function show(element: HTMLElement) {
-    element.style.display = ""
+    if (element instanceof HTMLButtonElement) {
+        element.hidden = false
+    } else {
+        element.style.display = ""
+    }
 }
 
 function hide(element: HTMLElement) {
-    element.style.display = "none"
+    if (element instanceof HTMLButtonElement) {
+        element.hidden = true
+    } else {
+        element.style.display = "none"
+    }
 }
 
 function formatTime(num: number) {
@@ -541,24 +591,24 @@ function getElementById(id: string) {
     return document.getElementById(id)
 }
 
-function getXElements(fragment: DocumentFragment) {
+function isInputElement(obj: HTMLElement) {
+    return obj instanceof HTMLInputElement || obj instanceof HTMLSelectElement
+}
+
+export function getXElements(fragment: DocumentFragment) {
     let o = {}
     for (let el of fragment.querySelectorAll(`[x]`)) {
         // @ts-ignore
         o[el.getAttribute('x') || ''] = el
         el.removeAttribute('x')
     }
-    return o
+    return new Proxy(o, elHandler)
 }
 
 function html(templateString: TemplateStringsArray) {
     let template = <HTMLTemplateElement>document.createElement('template')
     template.innerHTML = templateString[0];
     return template
-}
-
-function setValue(input: HTMLInputElement, value: string | number) {
-    input.value = value.toString()
 }
 
 function handleEvent(context: HTMLElement, event: Event) {
