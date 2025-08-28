@@ -49,7 +49,7 @@ class App extends HTMLElement {
         }
         this.timers = this.data.timers.map(timer => new Timer(timer, this.data))
 
-        let appDom = createTemplate(`<section x=timers class="grid timer-cards"></section>`).content
+        let appDom = html`<section x=timers class="grid timer-cards"></section>`.content
 
         this.$timers = (getXElements(appDom) as AppTemplate).timers
         this.$timers.append(...this.timers)
@@ -236,7 +236,7 @@ interface TimerTemplate {
     audioEl: HTMLAudioElement
 }
 
-const timerTemplate = createTemplate(/*html*/`
+const timerTemplate = html`
 <article>
 <header>
     <label>
@@ -280,7 +280,7 @@ const timerTemplate = createTemplate(/*html*/`
 
 </div>
 </article>
-`)
+`
 
 
 class Timer extends HTMLElement {
@@ -551,9 +551,9 @@ function getXElements(fragment: DocumentFragment) {
     return o
 }
 
-function createTemplate(templateString: string) {
+function html(templateString: TemplateStringsArray) {
     let template = <HTMLTemplateElement>document.createElement('template')
-    template.innerHTML = templateString;
+    template.innerHTML = templateString[0];
     return template
 }
 
