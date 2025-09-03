@@ -15,7 +15,7 @@
         return {
             value,
             title: xs[1],
-            filename: xs[2],
+            url: xs[2],
             isActive: allowedSounds.includes(value),
     }})
 
@@ -46,7 +46,7 @@
     }
 
     function addTimer() {
-        timers.push({id: Date.now()})
+        timers.push({id: Date.now(), hours: 0, minutes: 0, seconds: 0})
     }
 </script>
 

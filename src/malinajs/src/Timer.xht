@@ -3,7 +3,7 @@
     import { soundOptions } from "./sounds.js"
     import TimerSettings from "./TimerSettings.xht"
 
-    const sounds = [
+    const soundSelection = [
         { value: "default", title: "Default" },
         ...soundOptions.slice(1).map(xs => ({ value: xs[0], title: xs[1] }))
     ]
@@ -12,14 +12,17 @@
     export let deleteTimer
     export let currentTime
     export let stateUpdated
+    export let sounds
 
     let state = "stopped"
     let startedTime = 0
     let timeLeft = 0
     let timeoutId = null
+    let intervalId = null
     let instantTimer = {}
     let clock
     let showTimerSettings = false
+    let audio
 
     $: seconds = formatTime(timer.seconds) || null
     $: minutes = formatTime(timer.minutes) || null
@@ -27,11 +30,6 @@
     $: currentTime, () => {
         if (state !== "started") return
         timeLeft = formatClock(currentTime, startedTime, instantTimer.hours, instantTimer.minutes, instantTimer.seconds)
-    }
-    $: state, () => {
-        if (state !== "alarming") return
-        stateUpdated(state, timer)
-        clock.focus()
     }
     $: showTimerSettings, () => {
         if (showTimerSettings === false) {
@@ -45,10 +43,51 @@
 
     $onDestroy(stopTimer)
 
+    function getAlarm(sound, allowedSounds) {
+        if (!sound) {
+            let allAllowed = sounds.every(x => !x.isActive)
+            let allowedAlarms = sounds.filter(x => allAllowed || x.isActive)
+            return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
+        }
+        return sound
+    }
+
+    function startAlarm() {
+        state = "alarming"
+        stateUpdated(state, timer)
+        clock.focus()
+
+        timeLeft = null
+
+        let soundInfo = getAlarm(timer.sound, sounds)
+        if (!soundInfo) return
+
+        clearTimeout(timeoutId)
+
+        audio.title = soundInfo.title
+        audio.src = soundInfo.url
+        let volume = 1
+        audio.volume = volume / 100
+        intervalId = setInterval(() => {
+            if (audio && volume < 100) {
+                volume += 1
+                audio.volume = volume / 100
+            } else {
+                clearInterval(intervalId)
+            }
+        }, 1200)
+
+        // Stop audio after 2 minutes
+        timeoutId = setTimeout(() => stopTimer(), 12e4)
+
+        audio.play()
+            .catch(x => console.error("Audio failed to start.", x))
+    }
+
     function setNewTimeout() {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-            state = "alarming"
+            startAlarm()
         }, (instantTimer.hours * 3600 + instantTimer.minutes * 60 + instantTimer.seconds) * 1e3)
     }
 
@@ -69,7 +108,10 @@
     function stopTimer() {
         state = "stopped"
         clearTimeout(timeoutId)
+        clearInterval(intervalId)
+        intervalId = null
         timeoutId = null
+        audio.pause()
         stateUpdated(state, timer)
     }
 </script>
@@ -88,7 +130,7 @@
                 <input class="plain clock" value={minutes} name="minutes" aria-label="Minutes" type="number" placeholder="m">
                 <input class="plain clock" value={seconds} name="seconds" aria-label="Seconds" type="number" placeholder="s">
             </fieldset>
-            <span hidden><audio loop=""></audio></span>
+            <span hidden><audio #audio loop=""></audio></span>
         </div>
         <div class="flex">
             <button
@@ -108,5 +150,5 @@
 </article>
 
 {#if showTimerSettings}
-<TimerSettings {sounds} :value={timer.sound} @close={showTimerSettings = false} />
+<TimerSettings {soundSelection} :value={timer.sound} @close={showTimerSettings = false} />
 {/if}
