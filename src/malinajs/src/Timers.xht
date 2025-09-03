@@ -19,6 +19,7 @@
             intervalId = null
         }
     }
+    $: timers, () => $context.save()
 
     function deleteTimer(timer) {
         timers.splice(timers.findIndex(x => x === timer), 1)

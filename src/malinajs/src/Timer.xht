@@ -33,6 +33,15 @@
         stateUpdated(state, timer)
         clock.focus()
     }
+    $: showTimerSettings, () => {
+        if (showTimerSettings === false) {
+            $context.save()
+        }
+    }
+    $: timer, () => {
+        if (showTimerSettings === true) return
+        $context.save()
+    }
 
     $onDestroy(stopTimer)
 

@@ -5,7 +5,9 @@
     import { soundOptions } from "./sounds.js"
 
     const allowedSounds = ["explosion"]
-    const data = JSON.parse(`{"sound":"random","timers":[{"id":1737668464345,"hours":1,"minutes":0,"seconds":0,"title":"Move around","sound":"thunderrumble"},{"id":1737668464346,"hours":0,"minutes":30,"seconds":0,"title":"Time to Blink","sound":"sea"},{"id":1737668464347,"hours":0,"minutes":0,"seconds":20,"title":"Blink","sound":"hag_idle"}],"allowedSounds":["hag_idle","monster_footsteps","night2","rain_start","sea","swamp1","thunderrumble","waves"]}`)
+    const storageKey = "timers"
+    const data = JSON.parse(localStorage.getItem(storageKey) || `{"timers":[],"allowedSounds":[]}`)
+
     let showGlobalSettings = false
     let timers = data.timers
     let sounds = soundOptions.slice(1).map(xs => {
@@ -16,6 +18,32 @@
             filename: xs[2],
             isActive: allowedSounds.includes(value),
     }})
+
+    let debounce = 0
+    let appLoaded = false
+    $context.save = function save() {
+        if (debounce) return
+        debounce = 1
+        $tick(() => {
+            $tick(() => {
+                debounce = 0
+                if (!appLoaded) {
+                    appLoaded = true
+                    return
+                }
+                localStorage.setItem(storageKey, JSON.stringify({
+                    allowedSounds: sounds.filter(x => x.isActive).map(x => x.value),
+                    timers,
+                }))
+            })
+        })
+    }
+
+    $: showGlobalSettings, () => {
+        if (showGlobalSettings === false) {
+            $context.save()
+        }
+    }
 
     function addTimer() {
         timers.push({id: Date.now()})
