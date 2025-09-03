@@ -1,0 +1,28 @@
+<script>
+    import Dialog from "./components/Dialog.xht"
+    export let sounds
+    $: allChecked = sounds.every(x => x.isActive)
+    function handleAllToggle() {
+        for (let sound of sounds) {
+            sound.isActive = !allChecked
+        }
+    }
+</script>
+
+<Dialog @@close>
+    <header>
+        <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
+        <h2 class="inline">Options for All Timers</h2>
+    </header>
+    <h3>Allowed Sounds</h3>
+    <form>
+        <button @click|prevent={handleAllToggle}>
+            {!allChecked ? "Select" : "Deselect"} All
+        </button>
+        <hr>
+        {#each sounds as sound}
+            <label><input type="checkbox" :checked={sound.isActive} value={sound.value}>{sound.title}</label>
+        {/each}
+    </form>
+    <form id="modalClose" class="inline" method="dialog"></form>
+</Dialog>

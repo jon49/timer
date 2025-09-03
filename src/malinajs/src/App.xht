@@ -1,0 +1,56 @@
+<script>
+    import "./components/navigation.js"
+    import GlobalSettings from "./GlobalSettings.xht"
+    import Timers from "./Timers.xht"
+    import { soundOptions } from "./sounds.js"
+
+    const allowedSounds = ["explosion"]
+    const data = JSON.parse(`{"sound":"random","timers":[{"id":1737668464345,"hours":1,"minutes":0,"seconds":0,"title":"Move around","sound":"thunderrumble"},{"id":1737668464346,"hours":0,"minutes":30,"seconds":0,"title":"Time to Blink","sound":"sea"},{"id":1737668464347,"hours":0,"minutes":0,"seconds":20,"title":"Blink","sound":"hag_idle"}],"allowedSounds":["hag_idle","monster_footsteps","night2","rain_start","sea","swamp1","thunderrumble","waves"]}`)
+    let showGlobalSettings = false
+    let timers = data.timers
+    let sounds = soundOptions.slice(1).map(xs => {
+        let value = xs[0]
+        return {
+            value,
+            title: xs[1],
+            filename: xs[2],
+            isActive: allowedSounds.includes(value),
+    }})
+
+    function addTimer() {
+        timers.push({id: Date.now()})
+    }
+</script>
+
+<header>
+    <nav>
+        <ul>
+            <li class="pb-0 pt-0">
+                <h1 class="m-0">
+                    <img class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo"
+                        style="height: 2em; width: 1.56em;">
+                </h1>
+            </li>
+        </ul>
+        <ul>
+            <li><button @click={addTimer}>Add Timer</button></li>
+            <li><button @click={showGlobalSettings = true}>⚙</button></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <Timers {timers} {sounds} />
+</main>
+
+<footer class="container">
+    <small><a href="https://github.com/jon49/timer/tree/master/src/malinajs">Source Code</a></small>
+    <br>
+    <small>Created with <a href="https://malinajs.github.io/docs/">Malina.js</a></small>
+    <br>
+    <small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
+</footer>
+
+{#if showGlobalSettings}
+<GlobalSettings {sounds} @close={showGlobalSettings = false} />
+{/if}

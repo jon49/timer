@@ -1,0 +1,47 @@
+<script>
+    import Timer from "./Timer.xht"
+
+    export let timers
+    export let sounds
+
+    let activeTimers = new Set()
+    let activeTimersCount = 0
+    let currentTime = 0
+    let intervalId = null
+
+    $: activeTimersCount, () => {
+        if (activeTimers.size && intervalId == null) {
+            intervalId = setInterval(() => {
+                currentTime = Date.now()
+            }, 1e3)
+        } else if (!activeTimers.size && intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+        }
+    }
+
+    function deleteTimer(timer) {
+        timers.splice(timers.findIndex(x => x === timer), 1)
+    }
+
+    function stateUpdated(state, timer) {
+        if (state === "started" && !activeTimers.has(timer)) {
+            activeTimers.add(timer)
+            activeTimersCount = activeTimers.size
+        } else if (state !== "started" && activeTimers.has(timer)) {
+            activeTimers.delete(timer)
+            activeTimersCount = activeTimers.size
+        }
+    }
+</script>
+
+<section @state={stateUpdated} class="grid timer-cards">
+    {#each timers as timer}
+        <Timer
+            {timer}
+            {deleteTimer}
+            {currentTime}
+            {stateUpdated}
+            />
+    {/each}
+</section>

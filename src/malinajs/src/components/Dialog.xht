@@ -1,0 +1,19 @@
+<script>
+export let close
+
+let article
+let dialog
+
+function click(e) {
+    let target = e.target
+    if (!dialog.open || article.contains(target)) {
+        return
+    }
+    dialog.close()
+}
+</script>
+
+<dialog #dialog @click @@close {...$props} {* $tick(() => dialog.showModal())}>
+    <article #article><slot /></article>
+</dialog>
+

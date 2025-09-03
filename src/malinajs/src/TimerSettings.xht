@@ -1,0 +1,20 @@
+<script>
+    import Dialog from "./components/Dialog.xht"
+
+    export let sounds
+    export let value
+</script>
+
+<Dialog @@close>
+    <header>
+        <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
+        <h2 class="inline">Options</h2>
+    </header>
+    <fieldset @change={value = $event.target.value}>
+        <legend>Sound</legend>
+        {#each sounds as sound}
+        <label><input type="radio" name="sound" checked={value === sound.value} value={sound.value}>{sound.title}</label>
+        {/each}
+    </fieldset>
+    <form id="modalClose" method="dialog"></form>
+</Dialog>

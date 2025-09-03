@@ -1,0 +1,103 @@
+<script>
+    import { formatTime, formatClock } from "./utils/utils.js"
+    import { soundOptions } from "./sounds.js"
+    import TimerSettings from "./TimerSettings.xht"
+
+    const sounds = [
+        { value: "default", title: "Default" },
+        ...soundOptions.slice(1).map(xs => ({ value: xs[0], title: xs[1] }))
+    ]
+
+    export let timer
+    export let deleteTimer
+    export let currentTime
+    export let stateUpdated
+
+    let state = "stopped"
+    let startedTime = 0
+    let timeLeft = 0
+    let timeoutId = null
+    let instantTimer = {}
+    let clock
+    let showTimerSettings = false
+
+    $: seconds = formatTime(timer.seconds) || null
+    $: minutes = formatTime(timer.minutes) || null
+    $: hours = formatTime(timer.hours) || null
+    $: currentTime, () => {
+        if (state !== "started") return
+        timeLeft = formatClock(currentTime, startedTime, instantTimer.hours, instantTimer.minutes, instantTimer.seconds)
+    }
+    $: state, () => {
+        if (state !== "alarming") return
+        stateUpdated(state, timer)
+        clock.focus()
+    }
+
+    $onDestroy(stopTimer)
+
+    function setNewTimeout() {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+            state = "alarming"
+        }, (instantTimer.hours * 3600 + instantTimer.minutes * 60 + instantTimer.seconds) * 1e3)
+    }
+
+    function handleNewTime(time, value) {
+        timer[time] = +value
+    }
+
+    function startTimer() {
+        state = "started"
+        stateUpdated(state, timer)
+        startedTime = Date.now()
+        instantTimer.hours = timer.hours
+        instantTimer.minutes = timer.minutes
+        instantTimer.seconds = timer.seconds
+        setNewTimeout()
+    }
+
+    function stopTimer() {
+        state = "stopped"
+        clearTimeout(timeoutId)
+        timeoutId = null
+        stateUpdated(state, timer)
+    }
+</script>
+
+<article>
+    <header class="pb-0">
+        <label>
+            <input class="plain w-auto" :value={timer.title} aria-label="Timer Title" type="text" placeholder="Title">
+            <span class="editable-pencil">✎</span>
+        </label>
+    </header>
+    <div class="flex justify-between">
+        <div class="flex">
+            <fieldset class="time-entry m-0" role="group" @change={handleNewTime($event.target.name, $event.target.value)}>
+                <input class="plain clock" value={hours} name="hours" aria-label="Hours" type="number" placeholder="h">
+                <input class="plain clock" value={minutes} name="minutes" aria-label="Minutes" type="number" placeholder="m">
+                <input class="plain clock" value={seconds} name="seconds" aria-label="Seconds" type="number" placeholder="s">
+            </fieldset>
+            <span hidden><audio loop=""></audio></span>
+        </div>
+        <div class="flex">
+            <button
+                #clock
+                hidden={state === "stopped"}
+                title="Click to stop."
+                aria-label="Click to stop."
+                style="width: 140px;"
+                @click={stopTimer()}
+            >{timeLeft || "Stop"}</button>
+            <button @click={startTimer()} hidden={state !== "stopped"}>Start</button>
+            <button @click={startTimer()} hidden={state === "stopped"}>↻</button>
+            <button @click={showTimerSettings = true}>⚙</button>
+            <button @click={deleteTimer(timer)}>❌</button>
+        </div>
+    </div>
+</article>
+
+{#if showTimerSettings}
+<TimerSettings {sounds} :value={timer.sound} @close={showTimerSettings = false} />
+{/if}
