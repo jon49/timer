@@ -1,4 +1,5 @@
 import { Dialog } from "../components/Dialog"
+import type { DialogState } from "../components/Dialog"
 import { soundOptions } from "../shared/sounds"
 import { useAllowedSounds } from "../shared/data-store"
 import van, { State } from "vanjs-core"
@@ -7,20 +8,18 @@ let { article, button, div, form, h2, h3, header, hr, input, label } = van.tags
 let state = van.state
 
 export function GlobalSettings() {
-    let globalSettingsDialogIsOpen = state(false)
+    let dialogState = state("closed" as DialogState)
 
     return [
         button({
-            onclick: () => globalSettingsDialogIsOpen.val = true,
+            onclick: () => dialogState.val = "opened",
             innerHTML: "&#9881;"
         }),
-        div({ ondialogClosing: () => globalSettingsDialogIsOpen.val = false },
-            () => globalSettingsDialogIsOpen.val ? GlobalSettingsDialog() : div()
-        ),
+        div(() => dialogState.val === "opened" ? GlobalSettingsDialog(dialogState) : div()),
     ]
 }
 
-function GlobalSettingsDialog() {
+function GlobalSettingsDialog(dialogState: State<DialogState>) {
     let allowedSounds = useAllowedSounds()
 
     function handleToggle(e: Event) {
@@ -32,7 +31,7 @@ function GlobalSettingsDialog() {
                 : soundOptions.slice(1).map(([value]) => value)
     }
 
-    return Dialog(
+    return Dialog(dialogState,
         article({ id: "app-settings-edit", "data-box": "" },
             header(
                 button({ form: "modalClose", ariaLabel: "Close", value: "cancel", rel: "prev" }),

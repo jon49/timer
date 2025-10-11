@@ -75,12 +75,12 @@ input.plain:focus+.editable-pencil {
 }
 
 .timer-cards {
-    grid-template-columns: repeat(auto-fit, 26em);
+    grid-template-columns: repeat(auto-fit, 420px);
 }
 
 @media only screen and (max-width: 600px) {
     .timer-cards {
-        grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
     }
 }
 

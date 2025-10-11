@@ -1,5 +1,4 @@
 import { TimerData, TimerInfo } from "./types"
-import { publish, subscribe } from "./messaging"
 import van from "vanjs-core"
 
 let state = van.state
@@ -55,25 +54,16 @@ class TimerStore {
     get sound() {
         return this.data.sound
     }
+
+    newTimer() {
+        let id = newId(timerStore.timerIds)
+        let timer: TimerData = { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
+        timerStore.updateTimer(timer)
+        return timer
+    }
 }
 
 export let timerStore = new TimerStore()
-
-export function useTimers() {
-    let timerIds = timerStore.timerIds
-    subscribe("newTimer", () => {
-        let timer: TimerData = { id: newId(timerStore.timerIds), hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
-        timerStore.updateTimer(timer)
-        publish("timerAdded", timer.id)
-    })
-    subscribe("deleteTimer", (id: number) => {
-        timerStore.deleteTimer(id)
-        publish("unsubscribe", { key: id })
-        // @ts-expect-error
-        window[`appTimer${id}`]?.remove()
-    })
-    return timerIds
-}
 
 export function useAllowedSounds() {
     let sounds = state(timerStore.data.allowedSounds)

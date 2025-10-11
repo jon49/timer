@@ -6,7 +6,8 @@
   "scripts": {
     "start": "vite",
     "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/van --base /van/",
-    "build:main": "tsc -b && vite build --outDir ../../dist/ --base /"
+    "build:main": "tsc -b && vite build --outDir ../../dist/ --base /",
+    "check": "tsc -b --noEmit"
   },
   "keywords": [
     "vanjs"

@@ -1,16 +1,16 @@
-import { publish, subscribe } from "../shared/messaging"
 import { timerStore } from "../shared/data-store"
 import { tickCoordinator } from "../shared/tick-coordinator"
 import { soundOptions } from "../shared/sounds"
 import { formatTime, TimerState } from "../shared/utils"
 import van from "vanjs-core"
+import type { State } from "vanjs-core"
+import type { TimerData } from "../shared/types"
 
 let { audio, button, span } = van.tags
-let { state } = van
+let { state, derive } = van
 
-export function CountDownTimer(id: number) {
+export function CountDownTimer(id: number, timer: State<TimerData>, timerState: State<TimerState>) {
     let audioEl: HTMLAudioElement = audio({ loop: true })
-    let timerState = state<TimerState>("stopped")
     let clockStartedTime = state(0)
     let totalTime = state(0)
     let timeLeft = state(0)
@@ -23,30 +23,28 @@ export function CountDownTimer(id: number) {
         timeLeft.val = newTimeLeft
     }
 
-    subscribe("clockStarted", (timerId: number) => {
-        if (timerId !== id) return
+    derive(() => {
+        if (timerState.val !== "running") return
         let now = Math.floor(Date.now() / 1e3)
         totalTime.val = timerStore.getTotalTime(id)
         clockStartedTime.val = now
-        timerState.val = "running"
         timeLeft.val = totalTime.rawVal
         tickCoordinator.subscribe(id, tick)
-        timeoutId.val = setTimeout(() => publish("clockAlarm", id), totalTime.rawVal * 1e3)
-    }, id, () => { tickCoordinator.unsubscribe(id); timeoutId.val && clearTimeout(timeoutId.val) })
+        timeoutId.val = setTimeout(() => timerState.val = "alarm", totalTime.rawVal * 1e3)
+    })
 
-    subscribe("clockRestarted", (timerId: number) => {
-        if (timerId !== id) return
-        publish("clockStopped", id)
-        publish("clockStarted", id)
-    }, id)
+    derive(() => {
+        if (timerState.val !== "deleting") return
+        tickCoordinator.unsubscribe(id)
+        clearTimeout(timeoutId.val ?? 0)
+    })
 
-    subscribe("clockAlarm", (timerId: number) => {
-        if (timerId !== id) return
+    derive(() => {
+        if (timerState.val !== "alarm") return
         tickCoordinator.unsubscribe(id)
 
-        let timer = timerStore.getTimer(id)
         let info = timerStore.data
-        let soundInfo = getAlarm(timer.sound, info.allowedSounds)
+        let soundInfo = getAlarm(timer.rawVal.sound, info.allowedSounds)
         if (!soundInfo) return
 
         if (timeoutId.val) {
@@ -68,16 +66,14 @@ export function CountDownTimer(id: number) {
         }, 1200)
 
         // Stop audio after 2 minutes
-        alarmTimeoutId = setTimeout(() => publish("clockStopped", id), 12e4)
+        alarmTimeoutId = setTimeout(() => timerState.val = "stopped", 12e4)
 
         audioEl.play()
             .catch(x => console.error("Audio failed to start.", x))
+    })
 
-        timerState.val = "alarm"
-    }, id)
-
-    subscribe("clockStopped", (timerId: number) => {
-        if (timerId !== id) return
+    derive(() => {
+        if (timerState.val !== "stopped") return
         if (timeoutId.val) {
             clearTimeout(timeoutId.val)
         }
@@ -85,24 +81,24 @@ export function CountDownTimer(id: number) {
             clearTimeout(alarmTimeoutId)
             alarmTimeoutId = null
         }
-        timerState.val = "stopped"
         audioEl.pause()
         tickCoordinator.unsubscribe(id)
-    }, id)
+    })
 
     let $timer: HTMLButtonElement
 
     return [
         ($timer = button({
-            onclick: () => publish("clockStopped", id),
-            hidden: () => timerState.val !== "running" && timerState.val !== "alarm",
+            onclick: () => timerState.val = timerState.val === "stopped" ? "running" : "stopped",
             style: "width: 140px",
             title: () => timerState.val === "alarm" ? audioEl.title : "Click to stop.",
-            ariaLabel: "Click to stop."
+            ariaLabel: () => timerState.val === "running" ? "Click to stop." : "Click to start."
         }, () => {
             if (timerState.val === "alarm") {
                 $timer.focus()
                 return "Stop"
+            } else if (timerState.val === "stopped") {
+                return "Start"
             }
             return formatClock(timeLeft.val)
         })),

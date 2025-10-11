@@ -1,28 +1,21 @@
 import { Timer } from './timer/Timer'
-import { useTimers } from './shared/data-store'
-import { publish, subscribe } from './shared/messaging'
+import { timerStore } from './shared/data-store'
 import { GlobalSettings } from './timer/GlobalSettings'
 import van from "vanjs-core"
 import "./timer/TimerNavigation"
 
 let { a, article, br, button, footer, h1, header, li, main, img, nav, section, small, ul } = van.tags
 
-function addTimer() {
-    publish("newTimer")
-}
-
 function createTimer(id: number) {
     return article({ id: `appTimer${id}` }, Timer(id))
 }
 
 function App() {
-    let timerIds = useTimers()
-    let $timerCards: HTMLElement | null = null
+    let $timerCards: HTMLElement
 
-    subscribe("timerAdded", (id: number) => {
-        if (!$timerCards) return
-        $timerCards.appendChild(createTimer(id))
-    })
+    function addTimer() {
+        $timerCards.appendChild(createTimer(timerStore.newTimer().id))
+    }
 
     return [
         header(
@@ -46,7 +39,7 @@ function App() {
         main({ id: "timer" },
             $timerCards = section({
                 class: "grid timer-cards",
-            }, timerIds.map(id => createTimer(id)))),
+            }, timerStore.timerIds.map(id => createTimer(id)))),
 
         footer({ class: "container" },
             a({ href: "https://github.com/jon49/timer/tree/master/src/van-timer" }, "Source Code"),

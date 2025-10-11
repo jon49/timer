@@ -1,20 +1,18 @@
 import van from "vanjs-core"
-import { publish } from "../shared/messaging"
+import type { State } from "vanjs-core"
+
+export type DialogState = "opened" | "closing" | "closed"
 
 let { dialog } = van.tags
 
-function publishClosing(dialogEl: HTMLDialogElement) {
-    publish("dialogClosing", null, dialogEl)
-}
-
-export function Dialog(...children: HTMLElement[]) {
+export function Dialog(dialogState: State<DialogState>, ...children: HTMLElement[]) {
     let $dialog: HTMLDialogElement
 
     function handleClose(e: Event) {
         e.stopPropagation()
         if ((e.target as HTMLElement).closest("[data-box]")) return
-        publishClosing($dialog as HTMLDialogElement)
-        $dialog?.close()
+        dialogState.val = "closing"
+        setTimeout(() => $dialog?.close(), 1)
     }
 
     setTimeout(() => $dialog.showModal(), 1)
@@ -22,7 +20,7 @@ export function Dialog(...children: HTMLElement[]) {
     return (
         $dialog = dialog({
             onclick: handleClose,
-            onclose: () => publishClosing($dialog),
+            onclose: () => dialogState.val === "closing" ? null : (dialogState.val = "closing"),
         }, children)
     )
 }

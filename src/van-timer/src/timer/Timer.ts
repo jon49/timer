@@ -1,12 +1,12 @@
-import { useTimer } from "../shared/data-store"
-import { publish, subscribe } from "../shared/messaging"
+import { timerStore, useTimer } from "../shared/data-store"
 import { TimerSettings } from "./TimerSettings"
 import { formatTime, TimerState } from "../shared/utils"
 import { CountDownTimer } from "./CountDownTimer"
 import van from "vanjs-core"
+import type { DialogState } from "../components/Dialog"
 
-let { button, div, fieldset, header, input, label, span } = van.tags
-let { state } = van
+let { button, div, fieldset, header, input, label } = van.tags
+let { derive, state } = van
 
 export function Timer(id: number) {
     let timer = useTimer(id)
@@ -14,7 +14,14 @@ export function Timer(id: number) {
     let minutes = state(timer.val.minutes)
     let seconds = state(timer.val.seconds)
     let timerState = state<TimerState>("stopped")
-    let settingsDialogOpen = state(false)
+    let dialogState = state("closed" as DialogState)
+
+    derive(() => {
+        if (timerState.val !== "deleting") return
+        timerStore.deleteTimer(id)
+        // @ts-expect-error
+        setTimeout(() => window[`appTimer${id}`]?.remove(), 1)
+    })
 
     function setValue(name: "hours" | "minutes" | "seconds") {
         return (e: Event) => {
@@ -50,50 +57,31 @@ export function Timer(id: number) {
         }
     }
 
-    subscribe("clockStopped", (timerId: number) => {
-        if (timerId !== id) return
-        timerState.val = "stopped"
-    }, id)
-
-    subscribe("clockStarted", (timerId: number) => {
-        if (timerId !== id) return
-        timerState.val = "running"
-    }, id)
-
-    subscribe("dialogClosed", () => settingsDialogOpen.val = false, id)
-
     return [
         header({ class: "pb-0" },
-            label(
-                input({ class: "plain w-auto", onchange: e => timer.val = { ...timer.val, title: e.target.value }, value: timer.val.title, name: "title", type: "text", placeholder: "Title" }),
-                span({ class: "editable-pencil", innerHTML: "&#9998;" })
+            fieldset({ role: "group" },
+                input({ id: `timerTitle${id}`, class: "plain", onchange: e => timer.val = { ...timer.val, title: e.target.value }, value: timer.val.title, name: "title", type: "text", placeholder: "Title" }),
+                label({ for: `timerTitle${id}`, "aria-label": "Timer Title", innerHTML: "&#9998;" })
             )
         ),
+
+        fieldset({ role: "group" },
+            input({ onchange: setValue("hours"), value: () => formatTime(hours.val), name: "hours", type: "number", placeholder: "h" }),
+            input({ onchange: setValue("minutes"), value: () => formatTime(minutes.val), name: "minutes", type: "number", placeholder: "m" }),
+            input({ onchange: setValue("seconds"), value: () => formatTime(seconds.val), name: "seconds", type: "number", placeholder: "s" }),
+        ),
+
         div({ class: "flex justify-between" },
             div({ class: "flex" },
-                fieldset({ class: "time-entry m-0", role: "group" },
-                    input({ class: "plain clock", onchange: setValue("hours"), value: () => formatTime(hours.val), name: "hours", type: "number", placeholder: "h" }),
-                    input({ class: "plain clock", onchange: setValue("minutes"), value: () => formatTime(minutes.val), name: "minutes", type: "number", placeholder: "m" }),
-                    input({ class: "plain clock", onchange: setValue("seconds"), value: () => formatTime(seconds.val), name: "seconds", type: "number", placeholder: "s" }),
-                ),
-                CountDownTimer(id),
-            ),
-
-            div({ class: "flex" },
+                CountDownTimer(id, timer, timerState),
                 button({
-                    onclick: () => { timerState.val = "running"; publish("clockStarted", id) },
-                    hidden: () => timerState.val !== "stopped" },
-                    "Start"),
-                button({
-                    onclick: () => publish("clockRestarted", id),
+                    onclick: () => {timerState.val = "stopped"; setTimeout(() => timerState.val = "running", 1)},
                     hidden: () => timerState.val === "stopped",
                     innerHTML: "&#8635;" }),
-                button({ onclick: () => settingsDialogOpen.val = true, innerHTML: "&#9881;" }),
-                button({ onclick: () => publish("deleteTimer", id) }, "❌"),
+                button({ onclick: () => dialogState.val = "opened", innerHTML: "&#9881;" }),
+                button({ onclick: () => timerState.val = "deleting" }, "❌"),
             ),
-            div({ ondialogClosing: () => settingsDialogOpen.val = false },
-                () => settingsDialogOpen.val ? TimerSettings(id) : div(),
-            )
+            div(() => dialogState.val === "opened" ? TimerSettings(id, dialogState) : div())
         ),
     ]
 }

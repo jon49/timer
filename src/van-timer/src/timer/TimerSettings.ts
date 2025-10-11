@@ -1,14 +1,16 @@
 import { timerStore } from "../shared/data-store";
 import { soundOptions } from "../shared/sounds";
 import { Dialog } from "../components/Dialog";
+import type { DialogState } from "../components/Dialog";
 import van from "vanjs-core"
+import type { State } from "vanjs-core"
 
 let { article, button, fieldset, form, h2, input, header, label, legend } = van.tags
 
-export function TimerSettings(id: number) {
+export function TimerSettings(id: number, dialogState: State<DialogState>) {
     let timer = timerStore.getTimer(id)
 
-    return Dialog(
+    return Dialog(dialogState,
         article({ "data-box": "" },
             header(
                 button({ form: "modalClose", ariaLabel: "Close", value: "cancel", rel: "prev" }),
