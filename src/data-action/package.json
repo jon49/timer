@@ -1,0 +1,21 @@
+{
+  "name": "data-action-timer",
+  "version": "1.0.0",
+  "description": "Timer implementation using data-action",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/data-action --base /data-action/",
+    "check": "tsc -b --noEmit"
+  },
+  "keywords": [
+    "vanjs"
+  ],
+  "author": "Jon Nyman",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-compression2": "^2.2.0"
+  }
+}

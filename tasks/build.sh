@@ -8,6 +8,8 @@ mkdir dist
 
 (cd src/react-timer/ && npm run build) &
 
+(cd src/data-action/ && npm run build) &
+
 (cd src/van-timer/ && npm run build) &
 
 (cd src/van-timer/ && npm run build:main) &
