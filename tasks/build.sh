@@ -10,6 +10,8 @@ mkdir dist
 
 (cd src/data-action/ && npm run build) &
 
+(cd src/_action/ && npm run build) &
+
 (cd src/van-timer/ && npm run build) &
 
 (cd src/van-timer/ && npm run build:main) &

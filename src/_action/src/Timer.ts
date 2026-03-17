@@ -1,7 +1,7 @@
 import { timerStore } from "./shared/data-store.js"
 import { soundOptions } from "./shared/sounds.js"
 import { tickCoordinator } from "./shared/tick-coordinator.js"
-import type { TimerData } from "./shared/types"
+import type { TimerData } from "./shared/types.js"
 import { formatTime, getXElements } from "./shared/utils.js"
 import { formatClock, getAlarm } from "./timer/countdown.js"
 

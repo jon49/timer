@@ -1,15 +1,15 @@
 {
-  "name": "lo-action-timer",
+  "name": "is-_action-timer",
   "version": "1.0.0",
   "description": "Timer implementation using _<action>",
   "main": "index.js",
   "scripts": {
     "start": "vite",
-    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/lo-action --base /lo-action/",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/_action --base /_action/",
     "check": "tsc -b --noEmit"
   },
   "keywords": [
-    "lo-action"
+    "_action"
   ],
   "author": "Jon Nyman",
   "license": "ISC",
