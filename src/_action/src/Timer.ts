@@ -52,6 +52,7 @@ export class Timer {
 
     w.timers.append(root)
 
+    // This must be set after the form is in the document, otherwise the sound name will not be found.
     $.$timerForm.sound.value = timer.sound || "default"
   }
 
@@ -211,7 +212,6 @@ interface TimerElements {
   get hours(): number
   set hours(val: string)
   $hours: HTMLInputElement
-  restart: string
   $restart: HTMLButtonElement
   clock: string
   $clock: HTMLButtonElement
