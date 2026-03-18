@@ -27,8 +27,6 @@ export class Timer {
     if (!root) throw new Error("No root element in timer template!")
 
     let $ = this.$ = getXElements<TimerElements>(root)
-    $.$modalClose.id += timer.id
-    setAttribute($.$modalCloseButton, "form", "" + $.$modalCloseButton.getAttribute("form") + timer.id)
     let dialogId = `timerSettings${timer.id}`
     $.$timerSettings.id = dialogId
     setAttribute($.$openSettings, "commandfor", dialogId)
@@ -215,8 +213,6 @@ interface TimerElements {
   $hours: HTMLInputElement
   restart: string
   $restart: HTMLButtonElement
-  $modalClose: HTMLFormElement
-  $modalCloseButton: HTMLButtonElement
   clock: string
   $clock: HTMLButtonElement
   $audio: HTMLAudioElement
