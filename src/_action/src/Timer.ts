@@ -82,8 +82,8 @@ export class Timer {
       id: +$.id,
       title: $.title,
       hours: $.hours,
-      minutes: $.minutes,
-      seconds: $.seconds,
+      minutes: $.minutes > 59 ? 59 : $.minutes,
+      seconds: $.seconds > 59 ? 59 : $.seconds,
       sound: sound === "default" ? null : sound
     }
     this.setValues(timer)
