@@ -28,7 +28,7 @@ export class Timer {
 
     let $ = this.$ = getXElements<TimerElements>(root)
     $.$modalClose.id += timer.id
-    setAttribute($.$modalCloseButton, "form", ""+$.$modalCloseButton.getAttribute("form")  + timer.id)
+    setAttribute($.$modalCloseButton, "form", "" + $.$modalCloseButton.getAttribute("form") + timer.id)
     let dialogId = `timerSettings${timer.id}`
     $.$timerSettings.id = dialogId
     setAttribute($.$openSettings, "commandfor", dialogId)
@@ -162,10 +162,10 @@ export class Timer {
     $audio.volume = volume / 100
     this.audioIntervalId = setInterval(() => {
       if ($audio && volume < 100) {
-          volume += 1
-          $audio.volume = volume / 100
+        volume += 1
+        $audio.volume = volume / 100
       } else {
-          clearInterval(this.audioIntervalId)
+        clearInterval(this.audioIntervalId)
       }
     }, 1200)
 
@@ -173,7 +173,7 @@ export class Timer {
     this.alarmTimeoutId = setTimeout(() => this.stopAlarm(), 12e4)
 
     $audio.play()
-        .catch(x => console.error("Audio failed to start.", x))
+      .catch(x => console.error("Audio failed to start.", x))
   }
 
   tick(now: number) {
