@@ -38,8 +38,8 @@ class TimerStore {
         return this.data.timers.find(t => t.id == id) ?? { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
     }
 
-    getTotalTime(timer: TimerData) {
-        return timer.hours * 3600 + timer.minutes * 60 + timer.seconds
+    getTotalTime(timer: { hours: string, minutes: string, seconds: string }) {
+        return +timer.hours * 3600 + +timer.minutes * 60 + +timer.seconds
     }
 
     get timerIds() {

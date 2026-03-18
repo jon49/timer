@@ -19,8 +19,7 @@
       <ul>
         <li class="pb-0 pt-0">
           <h1 _click="addTimer" class="m-0">
-            <img class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo"
-              style="height: 2em; width: 1.56em;">
+            <img class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo" style="height: 2em; width: 1.56em;">
           </h1>
         </li>
       </ul>
@@ -35,39 +34,43 @@
     <section id="timers" class="grid timer-cards">
       <template id="timerTemplate">
         <article data-root>
-          <header class="pb-0">
-            <fieldset role="group">
-                <input x="title" id="timerTitle" _change="save" class="plain" name="title" type="text" placeholder="Title">
+          <form x="timerForm" _change="save">
+            <input name="id" type="hidden">
+            <header class="pb-0">
+              <fieldset role="group">
+                <input x="title" id="timerTitle" class="plain" name="title" type="text"
+                  placeholder="Title">
                 <label x="titleLabel" for="timerTitle" aria-label="Timer Title">✎</label>
+              </fieldset>
+            </header>
+            <fieldset role="group">
+              <input name="hours" type="number" placeholder="h" max="59">
+              <input name="minutes" type="number" placeholder="m" max="59">
+              <input name="seconds" type="number" placeholder="s" max="59">
             </fieldset>
-          </header>
-          <fieldset role="group" _change="save">
-            <input name="hours" type="number" placeholder="h">
-            <input name="minutes" type="number" placeholder="m">
-            <input name="seconds" type="number" placeholder="s">
-          </fieldset>
-          <div class="flex">
-            <button _click="toggleTimerState" x="clock" title="Click to start."
-              aria-label="Click to start." style="width: 140px;">Start</button>
-            <span hidden><audio x="audio" loop></audio></span>
-            <button hidden x="restart" _click="restart">↻</button>
-            <button x="openSettings" command="show-modal">⚙</button>
-            <button _click="deleteTimer">❌</button>
-          </div>
+            <div class="flex">
+              <button _click="toggleTimerState" x="clock" title="Click to start." aria-label="Click to start."
+                style="width: 140px;">Start</button>
+              <span hidden><audio x="audio" loop></audio></span>
+              <button hidden x="restart" _click="restart">↻</button>
+              <button class="mb-0" x="openSettings" type="button" command="show-modal">⚙</button>
+              <button _click="deleteTimer">❌</button>
+            </div>
+          </form>
           <dialog x="timerSettings">
             <article data-box>
               <header>
                 <button x="modalCloseButton" form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
                 <h2 class="inline">Options</h2>
               </header>
-              <form x="sounds">
+              <div x="sounds">
                 <legend>Sound</legend>
                 <label><input type="radio" name="sound" value="default">Default</label>
                 <label><input type="radio" name="sound" value="random">Random</label>
-              </form>
+              </div>
             </article>
-            <form id="modalClose" method="dialog"></form>
           </dialog>
+          <form id="modalClose" method="dialog"></form>
         </article>
       </template>
     </section>

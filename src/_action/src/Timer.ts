@@ -14,7 +14,6 @@ let soundOptionsHTML = soundOptions.slice(1).reduce((acc, sound) => {
 
 export class Timer {
   root: Element
-  timer: TimerData
   $: TimerElements
   clockStartedTime: number = 0
   totalTime: number = 0
@@ -38,10 +37,15 @@ export class Timer {
     $.$titleLabel.setAttribute("for", $.$title.id)
 
     $.$sounds.insertAdjacentHTML("beforeend", soundOptionsHTML)
-    $.$sounds.sound.value = timer.sound || "default"
 
-    this.timer = timer
-    this.setValues()
+    let timerFormId = `timerForm${timer.id}`
+    $.$timerForm.id = timerFormId
+    for (let input of $.$sounds.querySelectorAll("input")) {
+      setAttribute(input, "form", timerFormId)
+    }
+
+    this.setValues(timer)
+    $.$id.value = "" + timer.id
 
     this.root = root
     root.app = this
@@ -49,6 +53,8 @@ export class Timer {
     $.$timerSettings.addEventListener("close", this)
 
     w.timers.append(root)
+
+    $.$timerForm.sound.value = timer.sound || "default"
   }
 
   handleEvent(e: Event) {
@@ -57,7 +63,7 @@ export class Timer {
   }
 
   close() {
-    this.saveSound()
+    this.save()
   }
 
   deleteTimer() {
@@ -65,27 +71,22 @@ export class Timer {
     clearTimeout(this.clockTimeoutId)
     clearTimeout(this.alarmTimeoutId)
     clearInterval(this.audioIntervalId)
-    timerStore.deleteTimer(this.timer.id)
+    timerStore.deleteTimer(+this.$.id)
     this.root.remove()
   }
 
   save() {
     let $ = this.$
-    let timer = this.timer
-
-    timer.title = $.title
-    timer.hours = +$.hours
-    let minutes = +$.minutes
-    if (minutes > 59) {
-      minutes = 59
+    let sound = $.$timerForm.sound.value
+    let timer: TimerData = {
+      id: +$.id,
+      title: $.title,
+      hours: +$.hours,
+      minutes: +$.minutes,
+      seconds: +$.seconds,
+      sound: sound === "default" ? null : sound
     }
-    timer.minutes = minutes
-    let seconds = +$.seconds
-    if (seconds > 59) {
-      seconds = 59
-    }
-    timer.seconds = seconds
-    this.setValues()
+    this.setValues(timer)
     timerStore.updateTimer(timer)
   }
 
@@ -117,7 +118,7 @@ export class Timer {
 
     let now = Date.now()
     this.clockStartedTime = now / 1e3
-    this.totalTime = timerStore.getTotalTime(this.timer)
+    this.totalTime = timerStore.getTotalTime(this.$)
     this.tick(this.clockStartedTime)
     tickCoordinator.subscribe(this)
     this.clockTimeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
@@ -148,7 +149,7 @@ export class Timer {
     $.$clock.focus()
 
     let { allowedSounds } = timerStore.data
-    let soundInfo = getAlarm(this.timer.sound, allowedSounds)
+    let soundInfo = getAlarm(this.$.$timerForm.sound.value, allowedSounds)
     if (!soundInfo) return
 
     this.clearTimeouts()
@@ -175,21 +176,13 @@ export class Timer {
         .catch(x => console.error("Audio failed to start.", x))
   }
 
-  saveSound() {
-    let sound = this.$.$sounds.sound.value
-    if (!sound) return
-    this.timer.sound = sound === "default" ? null : sound
-    timerStore.updateTimer(this.timer)
-  }
-
   tick(now: number) {
     let timeElapsed = (now - this.clockStartedTime) | 0
     let newTimeLeft = this.totalTime - timeElapsed
     this.$.clock = formatClock(newTimeLeft)
   }
 
-  setValues() {
-    let timer = this.timer
+  setValues(timer: TimerData) {
     let $ = this.$
     $.title = timer.title
     $.hours = formatTime(timer.hours)
@@ -207,6 +200,8 @@ function removeAttribute(el: HTMLElement, key: string) {
 }
 
 interface TimerElements {
+  id: string
+  $id: HTMLInputElement
   title: string
   $title: HTMLInputElement
   seconds: string
@@ -226,4 +221,5 @@ interface TimerElements {
   $timerSettings: HTMLDialogElement
   $openSettings: HTMLButtonElement
   $titleLabel: HTMLLabelElement
+  $timerForm: HTMLFormElement
 }
