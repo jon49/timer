@@ -81,9 +81,9 @@ export class Timer {
     let timer: TimerData = {
       id: +$.id,
       title: $.title,
-      hours: +$.hours,
-      minutes: +$.minutes,
-      seconds: +$.seconds,
+      hours: $.hours,
+      minutes: $.minutes,
+      seconds: $.seconds,
       sound: sound === "default" ? null : sound
     }
     this.setValues(timer)
@@ -204,11 +204,14 @@ interface TimerElements {
   $id: HTMLInputElement
   title: string
   $title: HTMLInputElement
-  seconds: string
+  get seconds(): number
+  set seconds(val: string)
   $seconds: HTMLInputElement
-  minutes: string
+  get minutes(): number
+  set minutes(val: string)
   $minutes: HTMLInputElement
-  hours: string
+  get hours(): number
+  set hours(val: string)
   $hours: HTMLInputElement
   restart: string
   $restart: HTMLButtonElement
