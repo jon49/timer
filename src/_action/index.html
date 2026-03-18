@@ -57,19 +57,20 @@
             </div>
           </form>
           <dialog x="timerSettings">
-            <article data-box>
-              <header>
-                <button x="modalCloseButton" form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
-                <h2 class="inline">Options</h2>
-              </header>
-              <div x="sounds">
-                <legend>Sound</legend>
-                <label><input type="radio" name="sound" value="default">Default</label>
-                <label><input type="radio" name="sound" value="random">Random</label>
-              </div>
-            </article>
+            <form>
+              <article data-box>
+                <header>
+                  <button value="cancel" formmethod="dialog" aria-label="Close" rel="prev"></button>
+                  <h2 class="inline">Options</h2>
+                </header>
+                <div x="sounds">
+                  <legend>Sound</legend>
+                  <label><input type="radio" name="sound" value="default">Default</label>
+                  <label><input type="radio" name="sound" value="random">Random</label>
+                </div>
+              </article>
+            </form>
           </dialog>
-          <form id="modalClose" method="dialog"></form>
         </article>
       </template>
     </section>
