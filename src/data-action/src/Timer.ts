@@ -3,7 +3,7 @@ import { timerStore } from "./shared/data-store.js"
 import { soundOptions } from "./shared/sounds.js"
 import { tickCoordinator } from "./shared/tick-coordinator.js"
 import type { TimerData } from "./shared/types.js"
-import { closeOnBackdrop, formatTime, getXElements, type TimerState } from "./shared/utils.js"
+import { cloneDialog, formatTime, getXElements, showDialog, type TimerState } from "./shared/utils.js"
 
 let w = window
 let limits = { hours: 23, minutes: 59, seconds: 59 }
@@ -31,12 +31,6 @@ export class Timer {
     $.$titleLabel.htmlFor = $.$title.id
     $.title = timer.title
     for (let name of ["hours", "minutes", "seconds"] as const) $[name] = formatTime(timer[name])
-
-    $.$sounds.insertAdjacentHTML("beforeend", soundRadiosHTML)
-    let formId = `timerSettingsForm${timer.id}`
-    $.$settingsForm.id = formId
-    $.$settingsClose.setAttribute("form", formId)
-    closeOnBackdrop($.$settings)
 
     this.root = root
     root.app = this
@@ -66,11 +60,14 @@ export class Timer {
   }
 
   openSettings() {
+    let dialog = cloneDialog("timerSettings")
+    let { $sounds } = getXElements<{ $sounds: HTMLFieldSetElement }>(dialog)
+    $sounds.insertAdjacentHTML("beforeend", soundRadiosHTML)
     let sound = this.timer.sound ?? "default"
-    for (let radio of this.$.$sounds.querySelectorAll<HTMLInputElement>("input")) {
+    for (let radio of $sounds.querySelectorAll<HTMLInputElement>("input")) {
       radio.checked = radio.value === sound
     }
-    this.$.$settings.showModal()
+    showDialog(dialog, this)
   }
 
   saveSound(e: Event) {
@@ -157,8 +154,4 @@ interface TimerElements {
   $clock: HTMLButtonElement
   $restart: HTMLButtonElement
   $audio: HTMLAudioElement
-  $sounds: HTMLFieldSetElement
-  $settings: HTMLDialogElement
-  $settingsClose: HTMLButtonElement
-  $settingsForm: HTMLFormElement
 }

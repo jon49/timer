@@ -57,37 +57,40 @@
               <button data-action="deleteTimer" aria-label="Delete timer">❌</button>
             </div>
           </div>
-          <dialog x="settings">
-            <article data-box>
-              <header>
-                <button x="settingsClose" aria-label="Close" value="cancel" rel="prev"></button>
-                <h2 class="inline">Options</h2>
-              </header>
-              <fieldset x="sounds">
-                <legend>Sound</legend>
-              </fieldset>
-            </article>
-            <form x="settingsForm" method="dialog"></form>
-          </dialog>
         </article>
       </template>
     </section>
   </main>
 
-  <dialog id="appSettings">
-    <article data-box>
-      <header>
-        <button form="appSettingsForm" aria-label="Close" value="cancel" rel="prev"></button>
-        <h2 class="inline">Options for All Timers</h2>
-      </header>
-      <h3>Allowed Sounds</h3>
-      <form id="allowedSounds">
-        <button type="button" id="toggleSounds" data-action="toggleSounds">Select All</button>
-        <hr>
-      </form>
-    </article>
-    <form id="appSettingsForm" method="dialog"></form>
-  </dialog>
+  <!-- The dialogs, cloned into the page when one opens and removed when it closes. -->
+  <template id="dialogTemplates">
+    <dialog id="timerSettings" data-root>
+      <article data-box>
+        <header>
+          <button form="timerSettingsForm" aria-label="Close" value="cancel" rel="prev"></button>
+          <h2 class="inline">Options</h2>
+        </header>
+        <fieldset x="sounds">
+          <legend>Sound</legend>
+        </fieldset>
+      </article>
+      <form id="timerSettingsForm" method="dialog"></form>
+    </dialog>
+    <dialog id="appSettings" data-root>
+      <article data-box>
+        <header>
+          <button form="appSettingsForm" aria-label="Close" value="cancel" rel="prev"></button>
+          <h2 class="inline">Options for All Timers</h2>
+        </header>
+        <h3>Allowed Sounds</h3>
+        <form x="allowedSounds">
+          <button type="button" x="toggle" data-action="toggleSounds"></button>
+          <hr>
+        </form>
+      </article>
+      <form id="appSettingsForm" method="dialog"></form>
+    </dialog>
+  </template>
 
   <footer class="container">
     <a href="https://github.com/jon49/timer/tree/master/src/data-action">Source Code</a>

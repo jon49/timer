@@ -48,10 +48,21 @@ export function getXElements<T>(fragment: Element) {
     return new Proxy(o, elHandler) as T
 }
 
-// Closes a modal dialog when its backdrop (outside the [data-box] content) is clicked.
-export function closeOnBackdrop(dialog: HTMLDialogElement) {
+// A copy of the dialog with this id from <template id="dialogTemplates">.
+export function cloneDialog(id: string) {
+    let templates = document.getElementById("dialogTemplates") as HTMLTemplateElement
+    return templates.content.getElementById(id)!.cloneNode(true) as HTMLDialogElement
+}
+
+// Shows a cloned dialog as a modal, with `app` handling its actions. Clicking
+// the backdrop (outside the [data-box] content) closes it; closing removes it.
+export function showDialog(dialog: HTMLDialogElement, app: object) {
+    dialog.app = app
     dialog.addEventListener("click", e => {
         if ((e.target as HTMLElement).closest("[data-box]")) return
         dialog.close()
     })
+    dialog.addEventListener("close", () => dialog.remove())
+    document.body.append(dialog)
+    dialog.showModal()
 }
