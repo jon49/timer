@@ -1,28 +1,46 @@
 <script>
     import Dialog from "./components/Dialog.xht"
-    export let sounds
-    $: allChecked = sounds.every(x => x.isActive)
-    function handleAllToggle() {
-        for (let sound of sounds) {
-            sound.isActive = !allChecked
-        }
+    import { timerStore } from "./shared/data-store.js"
+    import { soundOptions } from "./shared/sounds.js"
+
+    const alarmSounds = soundOptions.slice(1)
+
+    let open = false
+    let allowed = timerStore.data.allowedSounds
+    $: allSelected = allowed.length === alarmSounds.length
+
+    function setAllowed(sounds) {
+        allowed = sounds
+        timerStore.setAllowedSounds(sounds)
+    }
+
+    function toggleAll() {
+        setAllowed(allSelected ? [] : alarmSounds.map(([value]) => value))
+    }
+
+    function changed(e) {
+        let checked = e.currentTarget.querySelectorAll("input[type=checkbox]:checked")
+        setAllowed(Array.from(checked).map(x => x.value))
     }
 </script>
 
-<Dialog @@close>
-    <header>
-        <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
-        <h2 class="inline">Options for All Timers</h2>
-    </header>
-    <h3>Allowed Sounds</h3>
-    <form>
-        <button @click|prevent={handleAllToggle}>
-            {!allChecked ? "Select" : "Deselect"} All
-        </button>
-        <hr>
-        {#each sounds as sound}
-            <label><input type="checkbox" :checked={sound.isActive} value={sound.value}>{sound.title}</label>
-        {/each}
-    </form>
-    <form id="modalClose" class="inline" method="dialog"></form>
+<button @click={open = true} aria-label="Options for all timers">&#9881;</button>
+
+{#if open}
+<Dialog @close={open = false}>
+    <article id="app-settings-edit" data-box>
+        <header>
+            <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
+            <h2 class="inline">Options for All Timers</h2>
+        </header>
+        <h3>Allowed Sounds</h3>
+        <form @change={changed}>
+            <button @click|prevent={toggleAll}>{allSelected ? "Deselect All" : "Select All"}</button>
+            <hr>
+            {#each alarmSounds as sound (sound[0])}
+                <label><input type="checkbox" value={sound[0]} checked={allowed.includes(sound[0])}>{sound[1]}</label>
+            {/each}
+        </form>
+    </article>
 </Dialog>
+{/if}

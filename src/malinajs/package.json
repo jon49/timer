@@ -1,8 +1,8 @@
 {
-  "name": "malina-app",
+  "name": "malinajs-timer",
   "version": "1.0.0",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rm -rf ../../dist/malinajs && OUT=../../dist/malinajs rollup -c",
     "dev": "rollup -cw",
     "start": "npx derver --production public",
     "surge": "cd public && npx surge"

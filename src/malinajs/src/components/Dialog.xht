@@ -1,19 +1,15 @@
 <script>
-export let close
+    // A native modal <dialog>: shown when it mounts, its `close` event
+    // forwarded to the parent. Clicking the backdrop closes it.
+    let dialog
 
-let article
-let dialog
-
-function click(e) {
-    let target = e.target
-    if (!dialog.open || article.contains(target)) {
-        return
+    function click(e) {
+        if (e.target.closest("[data-box]")) return
+        dialog.close()
     }
-    dialog.close()
-}
 </script>
 
-<dialog #dialog @click @@close {...$props} {* $tick(() => dialog.showModal())}>
-    <article #article><slot /></article>
+<dialog #dialog @click={click} @@close {* $tick(() => dialog.showModal())}>
+    <slot />
+    <form id="modalClose" class="inline" method="dialog"></form>
 </dialog>
-

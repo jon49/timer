@@ -8,18 +8,20 @@ import malinaSass from 'malinajs/plugins/sass'
 
 const DEV = !!process.env.ROLLUP_WATCH;
 const cssInJS = false;
+// `npm run build` writes to ../../dist/malinajs; `npm run dev` serves public/.
+const out = process.env.OUT || 'public';
 
 export default {
     input: 'src/main.js',
     output: {
-        file: 'public/bundle.js',
+        file: `${out}/bundle.js`,
         format: 'iife',
     },
     plugins: [
         copy({
             targets: [
-                { src: '../../static/*', dest: 'public' },
-                { src: './static/*', dest: 'public' },
+                { src: '../../static/*', dest: out },
+                { src: './static/*', dest: out },
             ]
         }),
         malina({
@@ -30,7 +32,7 @@ export default {
         resolve(),
         !cssInJS && css({ output: 'bundle.css' }),
         DEV && derver(),
-        !DEV && terser()
+        !DEV && !process.env.NO_MINIFY && terser()
     ],
     watch: {
         clearScreen: false

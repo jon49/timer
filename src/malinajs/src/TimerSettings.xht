@@ -1,20 +1,29 @@
 <script>
     import Dialog from "./components/Dialog.xht"
+    import { soundOptions } from "./shared/sounds.js"
 
-    export let sounds
-    export let value
+    export let sound
+
+    const choices = [["default", "Default"], ...soundOptions]
+
+    function changed(e) {
+        let value = e.target.value
+        $emit("sound", value === "default" ? null : value)
+    }
 </script>
 
 <Dialog @@close>
-    <header>
-        <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
-        <h2 class="inline">Options</h2>
-    </header>
-    <fieldset @change={value = $event.target.value}>
-        <legend>Sound</legend>
-        {#each sounds as sound}
-        <label><input type="radio" name="sound" checked={value === sound.value} value={sound.value}>{sound.title}</label>
-        {/each}
-    </fieldset>
-    <form id="modalClose" method="dialog"></form>
+    <article data-box>
+        <header>
+            <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
+            <h2 class="inline">Options</h2>
+        </header>
+        <fieldset @change={changed}>
+            <legend>Sound</legend>
+            {#each choices as choice (choice[0])}
+                <label><input type="radio" name="sound" value={choice[0]}
+                    checked={choice[0] === (sound ?? "default")}>{choice[1]}</label>
+            {/each}
+        </fieldset>
+    </article>
 </Dialog>
