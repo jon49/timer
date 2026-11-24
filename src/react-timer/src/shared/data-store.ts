@@ -1,6 +1,4 @@
-import { useState } from "react"
-import { TimerData, TimerInfo } from "./types"
-import { subscribe } from "./messaging"
+import type { TimerData, TimerInfo } from "./types"
 
 let appStateKey = "timers"
 
@@ -36,7 +34,7 @@ class TimerStore {
         this.save()
     }
 
-    getTimer(id: number) {
+    getTimer(id: number): TimerData {
         return this.data.timers.find(t => t.id == id) ?? { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
     }
 
@@ -46,48 +44,24 @@ class TimerStore {
         return timer.hours * 3600 + timer.minutes * 60 + timer.seconds
     }
 
+    setAllowedSounds(sounds: string[]) {
+        this.data.allowedSounds = sounds
+        this.save()
+    }
+
     get timerIds() {
         return this.data.timers.map(t => t.id)
     }
 
-    get sound() {
-        return this.data.sound
+    newTimer() {
+        let id = newId(this.timerIds)
+        let timer: TimerData = { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
+        this.updateTimer(timer)
+        return timer
     }
 }
 
 export let timerStore = new TimerStore()
-
-export function useTimers(): [number[], (timerIds: number[]) => void] {
-    let [timerIds, setTimerIds] = useState(timerStore.timerIds)
-    subscribe("newTimer", () => {
-        let timer: TimerData = { id: newId(timerStore.timerIds), hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
-        timerStore.updateTimer(timer)
-        setTimerIds(timerStore.timerIds)
-    }, [])
-    subscribe("deleteTimer", (id: number) => {
-        timerStore.deleteTimer(id)
-        setTimerIds(timerStore.timerIds)
-    }, [])
-    return [timerIds, setTimerIds]
-}
-
-export function useAllowedSounds(): [string[], (sounds: string[]) => void] {
-    let [sounds, setSounds] = useState(timerStore.data.allowedSounds)
-    let update = (sounds: string[]) => {
-        timerStore.data.allowedSounds = sounds
-        timerStore.save()
-        setSounds(sounds)
-    }
-    return [sounds, update]
-}
-
-export function useTimer(id: number): [TimerData, (timer: TimerData) => void] {
-    let [timer, setTimer] = useState(timerStore.getTimer(id))
-    return [timer, (timer: TimerData) => {
-        timerStore.updateTimer(timer)
-        setTimer(timer)
-    }]
-}
 
 function newId(ids: number[]) {
     if (ids.length == 0) {

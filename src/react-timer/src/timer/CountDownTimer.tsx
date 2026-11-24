@@ -1,125 +1,71 @@
-import { useRef } from "react"
-import useStateRef from "react-usestateref"
-import { publish, subscribe } from "../shared/messaging"
+import { useEffect, useRef, useState } from "react"
+import { formatClock, getAlarm, playAlarm } from "../shared/alarm"
 import { timerStore } from "../shared/data-store"
 import { tickCoordinator } from "../shared/tick-coordinator"
-import { soundOptions } from "../shared/sounds"
-import { formatTime, TimerState } from "./shared"
+import type { TimerState } from "../shared/utils"
 
-export function CountDownTimer({ id }: { id: number }) {
-    let audioEl = useRef<HTMLAudioElement>(null)
-    let [, setTimerState, timerState] = useStateRef<TimerState>("stopped")
-    let [, setClockStartedTime, clockStartedTime] = useStateRef(0)
-    let [, setTotalTime, totalTimeRef] = useStateRef(0)
-    let [, setTimeLeft, timeLeft] = useStateRef(0)
-    let [, setTimeoutId, timeoutId] = useStateRef<number | null>(null)
+export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateChange }: {
+    id: number
+    sound: string | null
+    state: TimerState
+    startedAt: number
+    onStart: () => void
+    onStateChange: (state: TimerState) => void
+}) {
+    let button = useRef<HTMLButtonElement>(null)
+    let audio = useRef<HTMLAudioElement>(null)
+    let [timeLeft, setTimeLeft] = useState(0)
+    let [alarmTitle, setAlarmTitle] = useState("")
+    // The latest values, for effects that shouldn't re-run when they change.
+    let latest = useRef({ sound, onStateChange })
+    latest.current = { sound, onStateChange }
 
-    function tick(now: number) {
-        let timeElapsed = Math.floor(now - clockStartedTime.current)
-        let newTimeLeft = totalTimeRef.current - timeElapsed
-        setTimeLeft(newTimeLeft)
-    }
+    // Running: count down from the wall clock. Re-runs when restarted
+    // (`startedAt` changes); the cleanup runs on stop, alarm, or unmount.
+    useEffect(() => {
+        if (state !== "running") return
+        let start = Math.floor(startedAt / 1e3)
+        let total = timerStore.getTotalTime(id)
+        setTimeLeft(total)
+        tickCoordinator.subscribe(id, now => setTimeLeft(total - (now - start)))
+        let timeout = setTimeout(() => latest.current.onStateChange("alarm"), total * 1e3)
+        return () => {
+            tickCoordinator.unsubscribe(id)
+            clearTimeout(timeout)
+        }
+    }, [id, state, startedAt])
 
-    subscribe("clockStarted", (timerId: number) => {
-        if (timerId !== id) return
-        let now = Math.floor(Date.now() / 1e3)
-        let totalTime = timerStore.getTotalTime(id)
-        setTotalTime(totalTime)
-        setClockStartedTime(now)
-        setTimerState("running")
-        setTimeLeft(totalTime)
-        tickCoordinator.subscribe(id, tick)
-        setTimeoutId(setTimeout(() => publish("clockAlarm", id), totalTime * 1e3))
-    }, [], () => { tickCoordinator.unsubscribe(id); timeoutId.current && clearTimeout(timeoutId.current) })
-
-    subscribe("clockRestarted", (timerId: number) => {
-        if (timerId !== id) return
-        publish("clockStopped", id)
-        publish("clockStarted", id)
-    }, [])
-
-    subscribe("clockAlarm", (timerId: number) => {
-        if (timerId !== id) return
-        tickCoordinator.unsubscribe(id)
-        setTimeoutId(null)
-
-        let timer = timerStore.getTimer(id)
-        let info = timerStore.data
-        let soundInfo = getAlarm(timer.sound, info.allowedSounds)
+    // Alarm: play the sound, auto-stop after 2 minutes.
+    useEffect(() => {
+        if (state !== "alarm") return
+        button.current?.focus()
+        let soundInfo = getAlarm(latest.current.sound, timerStore.data.allowedSounds)
         if (!soundInfo) return
-
-        if (timeoutId.current) {
-            clearTimeout(timeoutId.current)
+        setAlarmTitle(soundInfo.title)
+        let stopAudio = playAlarm(audio.current!, soundInfo)
+        let autoStop = setTimeout(() => latest.current.onStateChange("stopped"), 12e4)
+        return () => {
+            clearTimeout(autoStop)
+            stopAudio()
         }
-        setTimeoutId(null)
+    }, [state])
 
-        let audio = audioEl.current
-        if (!audio) return
-        audio.title = soundInfo.title
-        audio.src = soundInfo.url
-        let volume = 1
-        audio.volume = volume / 100
-        let audioFadeIn = setInterval(() => {
-            if (volume < 100 && audio) {
-                volume += 1
-                audio.volume = volume / 100
-            } else {
-                clearInterval(audioFadeIn)
-            }
-        }, 1200)
-
-        audio.play()
-            .catch(x => console.error("Audio failed to start.", x))
-
-        setTimerState("alarm")
-    }, [])
-
-    subscribe("clockStopped", (timerId: number) => {
-        if (timerId !== id) return
-        if (timeoutId.current) {
-            clearTimeout(timeoutId.current)
-        }
-        setTimerState("stopped")
-        audioEl?.current?.pause()
-        tickCoordinator.unsubscribe(id)
-    }, [])
+    function toggle() {
+        if (state === "stopped") onStart()
+        else onStateChange("stopped")
+    }
 
     return (
         <>
             <button
-                onClick={() => publish("clockStopped", id)}
-                hidden={timerState.current !== "running" && timerState.current !== "alarm"}
+                ref={button}
+                onClick={toggle}
                 style={{ width: "140px" }}
-                title={timerState.current === "alarm" ? audioEl.current?.title : "Click to stop."}
-                aria-label="Click to stop.">{(() => {
-                    if (timerState.current === "alarm") {
-                        return "Stop"
-                    }
-                    return formatClock(timeLeft.current)
-                })()}</button>
-
-            <span hidden>
-                <audio ref={audioEl} loop></audio>
-            </span>
+                title={state === "alarm" ? alarmTitle : "Click to stop."}
+                aria-label={state === "running" ? "Click to stop." : "Click to start."}>
+                {state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}
+            </button>
+            <span hidden><audio ref={audio} loop></audio></span>
         </>
     )
-}
-
-function formatClock(time: number): string {
-    if (time < 1) return "00:00:00"
-    let hours = Math.floor(time / 3600)
-    let minutes = Math.floor((time % 3600) / 60)
-    let seconds = time % 60
-    return `${formatTime(hours, "00")}:${formatTime(minutes, "00")}:${formatTime(seconds, "00")}`
-}
-
-let alarmIds = soundOptions.slice(1).map(([value]) => value)
-function getAlarm(sound: string | null, allowedSounds: string[]): { url: string, title: string } | undefined {
-    if (!sound) {
-        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
-        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
-    }
-    let alarm = soundOptions.find(([name]) => name === sound)
-    if (!alarm) return
-    return { url: alarm[2], title: alarm[1] }
 }

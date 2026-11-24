@@ -1,77 +1,79 @@
-import { useState } from "react"
-import { useTimer } from "../shared/data-store"
-import { publish, subscribe } from "../shared/messaging"
-import { TimerSettings } from "./TimerSettings"
-import { formatTime, TimerState } from "./shared"
+import { useEffect, useState } from "react"
+import { timerStore } from "../shared/data-store"
+import type { TimerData } from "../shared/types"
+import { formatTime, type TimerState } from "../shared/utils"
 import { CountDownTimer } from "./CountDownTimer"
+import { TimerSettings } from "./TimerSettings"
 
-export function Timer({ id }: { id: number }) {
-    let [timer, setTimer] = useTimer(id)
-    let [hours, setHours] = useState(timer.hours)
-    let [minutes, setMinutes] = useState(timer.minutes)
-    let [seconds, setSeconds] = useState(timer.seconds)
+let limits = { hours: 23, minutes: 59, seconds: 59 }
+
+export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
+    let [timer, setTimer] = useState(() => timerStore.getTimer(id))
     let [timerState, setTimerState] = useState<TimerState>("stopped")
-    let [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
+    let [startedAt, setStartedAt] = useState(0)
+    let [settingsOpen, setSettingsOpen] = useState(false)
 
-    let hourDisplay = () => formatTime(hours)
-    let minuteDisplay = () => formatTime(minutes)
-    let secondDisplay = () => formatTime(seconds)
+    useEffect(() => timerStore.updateTimer(timer), [timer])
 
-    function setValue(name: "hours" | "minutes" | "seconds") {
-        return (e: React.ChangeEvent<HTMLInputElement>) => {
-            let value = +e.target.value
-            timer[name] = value
-            switch (name) {
-                case "hours": setHours(value); break
-                case "minutes": setMinutes(value); break
-                case "seconds": setSeconds(value); break
-            }
-            setTimer(timer)
+    function update(patch: Partial<TimerData>) {
+        setTimer(t => ({ ...t, ...patch }))
+    }
+
+    function start() {
+        setStartedAt(Date.now())
+        setTimerState("running")
+    }
+
+    // React's onChange fires on every keystroke; the timer commits on the
+    // native change event (blur or Enter), like the other implementations.
+    // The inputs are uncontrolled: the handler validates, normalizes the text
+    // and commits.
+    function onCommit(handler: (input: HTMLInputElement) => void) {
+        return (input: HTMLInputElement | null) => {
+            if (input) input.onchange = () => handler(input)
         }
     }
 
-    subscribe("clockStopped", (timerId: number) => {
-        if (timerId !== id) return
-        setTimerState("stopped")
-    }, [])
-
-    subscribe("clockStarted", (timerId: number) => {
-        if (timerId !== id) return
-        setTimerState("running")
-    }, [])
-
-    subscribe("dialogClosed", () => setSettingsDialogOpen(false), [])
+    function setValue(name: keyof typeof limits) {
+        return onCommit(input => {
+            let value = +input.value
+            if (!Number.isInteger(value) || value < 0 || value > limits[name]) {
+                input.value = formatTime(timerStore.getTimer(id)[name])
+                return
+            }
+            input.value = formatTime(value)
+            update({ [name]: value })
+        })
+    }
 
     return (
         <>
-            <header>
-                <label>
-                    <input data-action="save" className="plain w-auto" name="title" type="text" placeholder="Title" />
-                    <span className="editable-pencil">&#9998;</span>
-                </label>
+            <header className="pb-0">
+                <fieldset role="group">
+                    <input id={`timerTitle${id}`} className="plain" ref={onCommit(input => update({ title: input.value }))}
+                        defaultValue={timer.title} name="title" type="text" placeholder="Title" />
+                    <label htmlFor={`timerTitle${id}`} aria-label="Timer Title">&#9998;</label>
+                </fieldset>
             </header>
+
+            <fieldset role="group">
+                <input ref={setValue("hours")} defaultValue={formatTime(timer.hours)} name="hours" type="number" placeholder="h" />
+                <input ref={setValue("minutes")} defaultValue={formatTime(timer.minutes)} name="minutes" type="number" placeholder="m" />
+                <input ref={setValue("seconds")} defaultValue={formatTime(timer.seconds)} name="seconds" type="number" placeholder="s" />
+            </fieldset>
+
             <div className="flex justify-between">
-
-                <div className="inline reverse">
-
-                    <CountDownTimer id={id} />
-
-                    <fieldset className="time-entry m-0" role="group">
-                        <input className="plain clock" onChange={setValue("hours")} value={hourDisplay()} name="hours" type="number" placeholder="h" />
-                        <input className="plain clock" onChange={setValue("minutes")} value={minuteDisplay()} name="minutes" type="number" placeholder="m" />
-                        <input className="plain clock" onChange={setValue("seconds")} value={secondDisplay()} name="seconds" type="number" placeholder="s" />
-                    </fieldset>
-                </div>
-
                 <div className="flex">
-                    <button onClick={() => { setTimerState("running"); publish("clockStarted", id) }} hidden={timerState !== "stopped"}>Start</button>
-                    <button onClick={() => publish("clockRestarted", id)} hidden={timerState === "stopped"}>&#8635;</button>
-                    <button onClick={() => setSettingsDialogOpen(true)}>&#9881;</button>
-                    <button onClick={() => publish("deleteTimer", id)}>❌</button>
+                    <CountDownTimer id={id} sound={timer.sound} state={timerState} startedAt={startedAt}
+                        onStart={start} onStateChange={setTimerState} />
+                    <button onClick={start} hidden={timerState === "stopped"} aria-label="Restart">&#8635;</button>
+                    <button onClick={() => setSettingsOpen(true)} aria-label="Timer options">&#9881;</button>
+                    <button onClick={onDelete} aria-label="Delete timer">❌</button>
                 </div>
-
-                {settingsDialogOpen && <TimerSettings id={id} />}
-
+                {settingsOpen && (
+                    <TimerSettings sound={timer.sound} onSoundChange={sound => update({ sound })}
+                        onClose={() => setSettingsOpen(false)} />
+                )}
             </div>
         </>
     )

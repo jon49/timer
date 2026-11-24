@@ -1,66 +1,56 @@
 import { useState } from "react"
-import { Dialog } from "../components/Dialog"
-import { subscribe } from "../shared/messaging"
+import { CloseButton, Dialog } from "../components/Dialog"
+import { timerStore } from "../shared/data-store"
 import { soundOptions } from "../shared/sounds"
-import { useAllowedSounds } from "../shared/data-store"
+
+let alarmSounds = soundOptions.slice(1)
 
 export function GlobalSettings() {
-    let [globalSettingsDialogIsOpen, setGlobalSettingsDialogIsOpen] = useState(false)
+    let [open, setOpen] = useState(false)
+    let [allowedSounds, setAllowed] = useState(() => timerStore.data.allowedSounds)
+    let allSelected = allowedSounds.length === alarmSounds.length
 
-    subscribe("dialogClosed", () => setGlobalSettingsDialogIsOpen(false), [])
+    function setAllowedSounds(sounds: string[]) {
+        timerStore.setAllowedSounds(sounds)
+        setAllowed(sounds)
+    }
 
-    return (
-        <>
-            <button onClick={() => setGlobalSettingsDialogIsOpen(true)}>&#9881;</button>
-            {globalSettingsDialogIsOpen && <GlobalSettingsDialog />}
-        </>
-    )
-}
-
-function GlobalSettingsDialog() {
-    let [allowedSounds, setAllowedSounds] = useAllowedSounds()
-
-    function handleToggle(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    function toggleAll(e: React.MouseEvent) {
         e.preventDefault()
-        e.stopPropagation()
-        setAllowedSounds(
-            allowedSounds.length === soundOptions.length - 1
-                ? []
-            : soundOptions.slice(1).map(([value]) => value))
+        setAllowedSounds(allSelected ? [] : alarmSounds.map(([value]) => value))
+    }
+
+    function toggle(value: string, checked: boolean) {
+        setAllowedSounds(checked
+            ? alarmSounds.map(([v]) => v).filter(v => v === value || allowedSounds.includes(v))
+            : allowedSounds.filter(v => v !== value))
     }
 
     return (
-        <Dialog>
-            <article id="app-settings-edit" data-box>
-                <header>
-                    <button form="modalClose" aria-label="Close" value="cancel" rel="prev"></button>
-                    <h2 className="inline">Options for All Timers</h2>
-                </header>
-                <h3>Allowed Sounds</h3>
-                <form onChange={e => { handleChange(e, setAllowedSounds) }}>
-                    <button onClick={handleToggle}>{
-                        allowedSounds.length === soundOptions.length - 1
-                            ? "Deselect All"
-                            : "Select All"
-                    }</button>
-                    <hr />
-                    {soundOptions.slice(1).map(([value, text]) =>
-                        <label>
-                            <input type="checkbox" value={value} {...{ checked: allowedSounds.includes(value) }} />
-                            {text}
-                        </label>)
-                    }
-                </form>
-            </article>
-            <form id="modalClose" className="inline" method="dialog"></form>
-        </Dialog>
+        <>
+            <button onClick={() => setOpen(true)} aria-label="Options for all timers">&#9881;</button>
+            {open && (
+                <Dialog onClose={() => setOpen(false)}>
+                    <article id="app-settings-edit" data-box>
+                        <header>
+                            <CloseButton />
+                            <h2 className="inline">Options for All Timers</h2>
+                        </header>
+                        <h3>Allowed Sounds</h3>
+                        <form>
+                            <button onClick={toggleAll}>{allSelected ? "Deselect All" : "Select All"}</button>
+                            <hr />
+                            {alarmSounds.map(([value, text]) => (
+                                <label key={value}>
+                                    <input type="checkbox" value={value} checked={allowedSounds.includes(value)}
+                                        onChange={e => toggle(value, e.currentTarget.checked)} />
+                                    {text}
+                                </label>
+                            ))}
+                        </form>
+                    </article>
+                </Dialog>
+            )}
+        </>
     )
-}
-
-function handleChange(e: React.FormEvent<HTMLFormElement>, setAllowedSounds: (sounds: string[]) => void) {
-    let form = e.currentTarget
-    let sounds = Array.from(form.elements)
-        .filter(el => el instanceof HTMLInputElement && el.type === "checkbox" && el.checked)
-        .map((el: any) => el.value)
-    setAllowedSounds(sounds)
 }
