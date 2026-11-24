@@ -16,6 +16,8 @@ mkdir dist
 
 (cd src/solid-timer/ && npm run build) &
 
+(cd src/morph-timer/ && npm run build) &
+
 (cd src/van-timer/ && npm run build) &
 
 (cd src/van-timer/ && npm run build:main) &

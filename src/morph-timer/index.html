@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Morph Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/css/pico.min.css" rel="preload" as="style">
+  <link href="/css/main.css" rel="stylesheet">
+  <link href="/images/timer.ico" rel="icon" type="image/x-icon">
+  <link href="/manifest.json" rel="manifest">
+  <script src="/src/main.ts" type="module"></script>
+</head>
+<body class="container">
+  <header>
+    <nav>
+      <ul>
+        <li class="pb-0 pt-0">
+          <h1 class="m-0">
+            <img _click="addTimer" class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo"
+              style="height: 2em; width: 1.56em;">
+          </h1>
+        </li>
+      </ul>
+      <ul>
+        <li><button _click="addTimer">Add Timer</button></li>
+        <li><button _click="openGlobalSettings" aria-label="Options for all timers">&#9881;</button></li>
+        <li><button _click="downloadData" aria-label="Download timer data" title="Download timer data">&#11015;</button></li>
+        <li><button _click="uploadData" aria-label="Upload timer data" title="Upload timer data">&#11014;</button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="container">
+    <a href="https://github.com/jon49/timer/tree/master/src/morph-timer">Source Code</a>
+    <br>
+    <small>Created with
+      <a href="https://github.com/jon49/html-template-tag-async">html-template-tag-stream</a>,
+      <a href="https://github.com/bigskysoftware/idiomorph">idiomorph</a> and
+      <a href="https://github.com/jon49/jon49-web">@jon49/web</a></small>
+    <br>
+    <small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
+  </footer>
+</body>
+</html>
