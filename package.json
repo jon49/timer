@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "./tasks/build.sh"
+    "build": "./tasks/build.sh",
+    "e2e": "./tasks/e2e.sh"
   },
   "dependencies": {
     "serve": "^14.2.1",
@@ -8,6 +9,7 @@
     "vanjs-ext": "^0.3.0"
   },
   "devDependencies": {
-    "esbuild": "^0.19.12"
+    "esbuild": "^0.19.12",
+    "playwright": "~1.58.2"
   }
 }
