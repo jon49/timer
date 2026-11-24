@@ -113,7 +113,7 @@ export let actions = {
     countdown({ el }: AppActionContext) {
         let id = idOf(el)
         let end = +(el.dataset.end ?? 0)
-        tickCoordinator.subscribe(id, () => el.textContent = formatClock(Math.ceil((end - Date.now()) / 1e3)))
+        tickCoordinator.subscribe(id, () => (el.firstChild as Text).data = formatClock(Math.ceil((end - Date.now()) / 1e3)))
         let timeout = setTimeout(() => { ring(id); renderTimer(id) }, end - Date.now())
         return {
             disconnectedCallback() {

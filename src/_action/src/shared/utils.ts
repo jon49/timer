@@ -28,7 +28,10 @@ const elHandler = {
             val.value = newVal
             return true
         }
-        val.textContent = newVal
+        // Rewrite the text node in place rather than replacing it.
+        let text = val.firstChild
+        if (text instanceof Text && !text.nextSibling) text.data = newVal
+        else val.textContent = newVal
         return true
     }
 }
