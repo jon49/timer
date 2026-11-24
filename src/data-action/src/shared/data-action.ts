@@ -1,7 +1,7 @@
 document.addEventListener("click", e => {
   let target = e.target
   let action: string | undefined
-  if (!(target instanceof HTMLButtonElement && (action = target.dataset.action))) return
+  if (!(target instanceof HTMLElement && (action = target.dataset.action))) return
 
   handleCall(e, target, action)
 })
