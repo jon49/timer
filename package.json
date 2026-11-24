@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "./tasks/build.sh",
+    "measure": "./tasks/measure.sh",
     "e2e": "./tasks/e2e.sh"
   },
   "dependencies": {
