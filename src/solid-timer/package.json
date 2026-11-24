@@ -1,0 +1,24 @@
+{
+  "name": "solid-timer",
+  "version": "1.0.0",
+  "description": "Timer implementation using SolidJS 2.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc -b && vite build --emptyOutDir --outDir ../../dist/solid --base /solid/",
+    "check": "tsc -b --noEmit"
+  },
+  "author": "Jon Nyman",
+  "license": "ISC",
+  "dependencies": {
+    "@solidjs/web": "^2.0.3",
+    "solid-js": "^2.0.3"
+  },
+  "devDependencies": {
+    "@solidjs/vite-plugin": "^3.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vite-plugin-compression2": "^2.5.4"
+  }
+}
