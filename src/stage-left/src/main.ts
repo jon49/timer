@@ -147,7 +147,7 @@ const timerTemplate = html<TimerTemplate>`
     </fieldset>
     <div class="flex justify-between">
         <div class=flex>
-            <button #=clockEl #text=clock #title=clockTitle #aria-label=clockLabel data-action=toggleClock style="width: 140px;"></button>
+            <button #=clockEl #title=clockTitle #aria-label=clockLabel data-action=toggleClock style="width: 140px;">#clock</button>
             <span hidden><audio #=audioEl loop></audio></span>
             <button #=restartEl data-action=startClock aria-label=Restart>&#8635;</button>
             <button data-action=editSettings aria-label="Timer options">&#9881;</button>
