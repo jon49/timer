@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
-  <title>Van Timer</title>
+  <title>_action Timer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="/css/pico.min.css" rel="preload" as="style">
   <link href="/css/main.css" rel="stylesheet">
@@ -16,81 +17,82 @@
     <nav>
       <ul>
         <li class="pb-0 pt-0">
-          <h1 _click="addTimer" class="m-0">
-            <img class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo" style="height: 2em; width: 1.56em;">
+          <h1 class="m-0">
+            <img _click="addTimer" class="pointer" src="/images/timer.svg" alt="Timer Hourglass logo"
+              style="height: 2em; width: 1.56em;">
           </h1>
         </li>
       </ul>
       <ul>
         <li><button _click="addTimer">Add Timer</button></li>
-        <li><button commandfor="appSettings" command="show-modal">⚙</button></li>
+        <li><button _click="openAppSettings" aria-label="Options for all timers">&#9881;</button></li>
+        <li><button _click="downloadData" aria-label="Download timer data" title="Download timer data">&#11015;</button></li>
+        <li><button _click="uploadData" aria-label="Upload timer data" title="Upload timer data">&#11014;</button></li>
       </ul>
     </nav>
   </header>
 
-  <main>
+  <main id="timer">
     <section id="timers" class="grid timer-cards">
       <template id="timerTemplate">
         <article data-root>
-          <form x="timerForm" _change="save">
-            <input name="id" type="hidden">
-            <header class="pb-0">
-              <fieldset role="group">
-                <input x="title" id="timerTitle" class="plain" name="title" type="text" placeholder="Title">
-                <label x="titleLabel" for="timerTitle" aria-label="Timer Title">✎</label>
-              </fieldset>
-            </header>
+          <header class="pb-0">
             <fieldset role="group">
-              <input name="hours" type="number" placeholder="h">
-              <input name="minutes" type="number" placeholder="m">
-              <input name="seconds" type="number" placeholder="s">
+              <input x="title" _change="saveTitle" class="plain" name="title" type="text" placeholder="Title">
+              <label x="titleLabel" aria-label="Timer Title">&#9998;</label>
             </fieldset>
+          </header>
+          <fieldset role="group">
+            <input x="hours" _change="saveTime" name="hours" type="number" placeholder="h">
+            <input x="minutes" _change="saveTime" name="minutes" type="number" placeholder="m">
+            <input x="seconds" _change="saveTime" name="seconds" type="number" placeholder="s">
+          </fieldset>
+          <div class="flex justify-between">
             <div class="flex">
-              <button _click="toggleTimerState" x="clock" title="Click to start." aria-label="Click to start."
-                style="width: 140px;">Start</button>
+              <button x="clock" _click="toggleTimerState" style="width: 140px;"
+                title="Click to stop." aria-label="Click to start.">Start</button>
               <span hidden><audio x="audio" loop></audio></span>
-              <button hidden x="restart" _click="restart">↻</button>
-              <button class="mb-0" x="openSettings" type="button" command="show-modal">⚙</button>
-              <button _click="deleteTimer">❌</button>
+              <button x="restart" _click="start" hidden aria-label="Restart">&#8635;</button>
+              <button _click="openSettings" aria-label="Timer options">&#9881;</button>
+              <button _click="deleteTimer" aria-label="Delete timer">❌</button>
             </div>
-          </form>
-          <dialog x="timerSettings">
-            <form>
-              <article data-box>
-                <header>
-                  <button value="cancel" formmethod="dialog" aria-label="Close" rel="prev"></button>
-                  <h2 class="inline">Options</h2>
-                </header>
-                <div x="sounds">
-                  <legend>Sound</legend>
-                  <label><input type="radio" name="sound" value="default">Default</label>
-                  <label><input type="radio" name="sound" value="random">Random</label>
-                </div>
-              </article>
-            </form>
+          </div>
+          <dialog x="settings">
+            <article data-box>
+              <header>
+                <button x="settingsClose" aria-label="Close" value="cancel" rel="prev"></button>
+                <h2 class="inline">Options</h2>
+              </header>
+              <fieldset x="sounds" _change="saveSound">
+                <legend>Sound</legend>
+              </fieldset>
+            </article>
+            <form x="settingsForm" method="dialog"></form>
           </dialog>
         </article>
       </template>
     </section>
   </main>
 
-  <dialog id="appSettings" onclose="dataAction(event)" _close="saveAppSettings">
+  <dialog id="appSettings">
     <article data-box>
       <header>
-        <button form="appSettingsDialogForm" aria-label="Close" value="cancel" rel="prev"></button>
+        <button form="appSettingsForm" aria-label="Close" value="cancel" rel="prev"></button>
         <h2 class="inline">Options for All Timers</h2>
       </header>
       <h3>Allowed Sounds</h3>
-      <fieldset id="allowedSounds">
-        <button _click="toggleSounds">Toggle All</button>
+      <form id="allowedSounds" _change="saveAllowedSounds">
+        <button type="button" id="toggleSounds" _click="toggleSounds">Select All</button>
         <hr>
-      </fieldset>
+      </form>
     </article>
-    <form id="appSettingsDialogForm" method="dialog"></form>
+    <form id="appSettingsForm" method="dialog"></form>
   </dialog>
 
   <footer class="container">
     <a href="https://github.com/jon49/timer/tree/master/src/_action">Source Code</a>
+    <br>
+    <small>Created with <a href="https://github.com/jon49/timer/blob/master/src/_action/src/shared/_action.ts">_action attributes</a></small>
     <br>
     <small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
   </footer>

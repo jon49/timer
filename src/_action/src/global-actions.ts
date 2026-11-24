@@ -1,39 +1,51 @@
-import {timerStore} from "./shared/data-store.js"
+import { timerStore } from "./shared/data-store.js"
+import { downloadData, uploadData } from "./shared/data-transfer.js"
 import { soundOptions } from "./shared/sounds.js"
+import { closeOnBackdrop } from "./shared/utils.js"
 import { Timer } from "./Timer.js"
 
 let w = window
+let alarmSounds = soundOptions.slice(1)
+
+let $appSettings = document.getElementById("appSettings") as HTMLDialogElement
+let $allowedSounds = document.getElementById("allowedSounds") as HTMLFormElement
+let $toggleSounds = document.getElementById("toggleSounds") as HTMLButtonElement
+
+for (let [value, text] of alarmSounds) {
+  $allowedSounds.insertAdjacentHTML("beforeend",
+    `<label><input type="checkbox" value="${value}">${text}</label>`)
+}
+closeOnBackdrop($appSettings)
+
+let checkboxes = () => Array.from($allowedSounds.querySelectorAll<HTMLInputElement>("input[type=checkbox]"))
+
+function showAllowedSounds() {
+  let allowed = timerStore.data.allowedSounds
+  for (let input of checkboxes()) input.checked = allowed.includes(input.value)
+  $toggleSounds.textContent = allowed.length === alarmSounds.length ? "Deselect All" : "Select All"
+}
 
 w.app = {
-  addTimer: _ => {
-    let timer = timerStore.newTimer()
-    new Timer(timer)
+  addTimer() {
+    new Timer(timerStore.newTimer())
   },
-  saveAppSettings: _ => {
-    let allowedSounds = timerStore.data.allowedSounds
-    allowedSounds.length = 0
-    for (let input of w.allowedSounds.querySelectorAll("input")) {
-      if (input.checked) {
-        allowedSounds.push(input.value)
-        timerStore.save()
-      }
-    }
+  openAppSettings() {
+    showAllowedSounds()
+    $appSettings.showModal()
   },
-  toggleSounds: _ => {
-    let allowedSounds = Array.from(w.allowedSounds.querySelectorAll("input"))
-    let allChecked = allowedSounds.every(x => x.checked)
-    for (let input of allowedSounds) {
-      input.checked = !allChecked
-    }
-  }
+  saveAllowedSounds() {
+    timerStore.setAllowedSounds(checkboxes().filter(x => x.checked).map(x => x.value))
+    showAllowedSounds()
+  },
+  toggleSounds() {
+    let all = timerStore.data.allowedSounds.length === alarmSounds.length
+    timerStore.setAllowedSounds(all ? [] : alarmSounds.map(([value]) => value))
+    showAllowedSounds()
+  },
+  downloadData,
+  uploadData,
 }
 
-for (let timer of timerStore.timers) {
+for (let timer of timerStore.data.timers) {
   new Timer(timer)
-}
-
-for (let sound of soundOptions) {
-  w.allowedSounds.insertAdjacentHTML(
-    "beforeend",
-    `<label><input name="allowedSounds" type="checkbox" value="${sound[0]}" ${timerStore.data.allowedSounds.includes(sound[0]) ? "checked" : ""}>${sound[1]}</label>`)
 }

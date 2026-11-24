@@ -23,7 +23,7 @@ class TickCoordinator {
 
   tick() {
     requestAnimationFrame(() => {
-      let now = Math.ceil(Date.now() / 1e3)
+      let now = Math.floor(Date.now() / 1e3)
       for (let subscriber of this.subscribers) {
         subscriber.tick(now)
       }

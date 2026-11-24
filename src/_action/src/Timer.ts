@@ -1,224 +1,164 @@
+import { formatClock, getAlarm, playAlarm } from "./shared/alarm.js"
 import { timerStore } from "./shared/data-store.js"
 import { soundOptions } from "./shared/sounds.js"
 import { tickCoordinator } from "./shared/tick-coordinator.js"
 import type { TimerData } from "./shared/types.js"
-import { formatTime, getXElements } from "./shared/utils.js"
-import { formatClock, getAlarm } from "./timer/countdown.js"
+import { closeOnBackdrop, formatTime, getXElements, type TimerState } from "./shared/utils.js"
 
 let w = window
+let limits = { hours: 23, minutes: 59, seconds: 59 }
 
-// Populate sound options
-let soundOptionsHTML = soundOptions.slice(1).reduce((acc, sound) => {
-  return acc + `<label><input type="radio" name="sound" value="${sound[0]}">${sound[1]}</label>`
-}, "")
+let soundRadiosHTML = [["default", "Default"], ...soundOptions].map(([value, text]) =>
+  `<label><input type="radio" name="sound" value="${value}">${text}</label>`).join("")
 
 export class Timer {
-  root: Element
+  id: number
+  root: HTMLElement
   $: TimerElements
-  clockStartedTime: number = 0
-  totalTime: number = 0
-  clockTimeoutId: number = 0
-  alarmTimeoutId: number = 0
-  audioIntervalId: number = 0
+  state: TimerState = "stopped"
+  startedAt = 0
+  totalTime = 0
+  clockTimeoutId = 0
+  alarmTimeoutId = 0
+  stopAudio = () => { }
 
   constructor(timer: TimerData) {
-    let $timer = w.timerTemplate.content.cloneNode(true) as DocumentFragment
-    let root = $timer.firstElementChild
-    if (!root) throw new Error("No root element in timer template!")
-
+    let root = (w.timerTemplate.content.cloneNode(true) as DocumentFragment).firstElementChild as HTMLElement
     let $ = this.$ = getXElements<TimerElements>(root)
-    let dialogId = `timerSettings${timer.id}`
-    $.$timerSettings.id = dialogId
-    setAttribute($.$openSettings, "commandfor", dialogId)
+    this.id = timer.id
 
-    $.$title.id += timer.id
-    $.$titleLabel.setAttribute("for", $.$title.id)
+    $.$title.id = `timerTitle${timer.id}`
+    $.$titleLabel.htmlFor = $.$title.id
+    $.title = timer.title
+    for (let name of ["hours", "minutes", "seconds"] as const) $[name] = formatTime(timer[name])
 
-    $.$sounds.insertAdjacentHTML("beforeend", soundOptionsHTML)
-
-    let timerFormId = `timerForm${timer.id}`
-    $.$timerForm.id = timerFormId
-    for (let input of $.$sounds.querySelectorAll("input")) {
-      setAttribute(input, "form", timerFormId)
-    }
-
-    this.setValues(timer)
-    $.$id.value = "" + timer.id
+    $.$sounds.insertAdjacentHTML("beforeend", soundRadiosHTML)
+    let formId = `timerSettingsForm${timer.id}`
+    $.$settingsForm.id = formId
+    $.$settingsClose.setAttribute("form", formId)
+    closeOnBackdrop($.$settings)
 
     this.root = root
     root.app = this
-
-    $.$timerSettings.addEventListener("close", this)
-
     w.timers.append(root)
-
-    // This must be set after the form is in the document, otherwise the sound name will not be found.
-    $.$timerForm.sound.value = timer.sound || "default"
   }
 
-  handleEvent(e: Event) {
-    // @ts-ignore
-    this[e.type]?.(e)
+  get timer() {
+    return timerStore.getTimer(this.id)
   }
 
-  close() {
-    this.save()
+  update(patch: Partial<TimerData>) {
+    timerStore.updateTimer({ ...this.timer, ...patch })
+  }
+
+  saveTitle() {
+    this.update({ title: this.$.title })
+  }
+
+  saveTime(e: Event) {
+    let input = e.target as HTMLInputElement
+    let name = input.name as keyof typeof limits
+    let value = +input.value
+    if (Number.isInteger(value) && value >= 0 && value <= limits[name]) {
+      this.update({ [name]: value })
+    }
+    input.value = formatTime(this.timer[name])
+  }
+
+  openSettings() {
+    let sound = this.timer.sound ?? "default"
+    for (let radio of this.$.$sounds.querySelectorAll<HTMLInputElement>("input")) {
+      radio.checked = radio.value === sound
+    }
+    this.$.$settings.showModal()
+  }
+
+  saveSound(e: Event) {
+    let value = (e.target as HTMLInputElement).value
+    this.update({ sound: value === "default" ? null : value })
   }
 
   deleteTimer() {
-    tickCoordinator.unsubscribe(this)
-    clearTimeout(this.clockTimeoutId)
-    clearTimeout(this.alarmTimeoutId)
-    clearInterval(this.audioIntervalId)
-    timerStore.deleteTimer(+this.$.id)
+    this.stop()
+    timerStore.deleteTimer(this.id)
     this.root.remove()
   }
 
-  save() {
-    let $ = this.$
-    let sound = $.$timerForm.sound.value
-    let timer: TimerData = {
-      id: +$.id,
-      title: $.title,
-      hours: $.hours,
-      minutes: $.minutes > 59 ? 59 : $.minutes,
-      seconds: $.seconds > 59 ? 59 : $.seconds,
-      sound: sound === "default" ? null : sound
-    }
-    this.setValues(timer)
-    timerStore.updateTimer(timer)
-  }
-
   toggleTimerState() {
-    if (this.$.clock === "Start") {
+    if (this.state === "stopped") {
       this.start()
     } else {
       this.stop()
     }
   }
 
-  stop() {
-    this.stopAlarm()
-    let $ = this.$
-    $.$restart.hidden = true
-    $.clock = "Start"
-    removeAttribute($.$clock, "title")
-    removeAttribute($.$clock, "aria-label")
-  }
-
+  // Also restarts a running or ringing timer.
   start() {
-    clearTimeout(this.clockTimeoutId ?? 0)
-
+    this.clear()
     let $ = this.$
-
-    setAttribute($.$clock, "title", "Click to stop.")
-    setAttribute($.$clock, "aria-label", "Click to stop.")
+    this.state = "running"
+    this.startedAt = Math.floor(Date.now() / 1e3)
+    this.totalTime = timerStore.getTotalTime(this.id)
+    $.clock = formatClock(this.totalTime)
+    $.$clock.title = "Click to stop."
+    $.$clock.ariaLabel = "Click to stop."
     $.$restart.hidden = false
-
-    let now = Date.now()
-    this.clockStartedTime = now / 1e3
-    this.totalTime = timerStore.getTotalTime(this.$)
-    this.tick(this.clockStartedTime)
     tickCoordinator.subscribe(this)
     this.clockTimeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
   }
 
-  restart() {
-    this.stopAlarm()
-    this.start()
+  stop() {
+    this.clear()
+    let $ = this.$
+    this.state = "stopped"
+    $.clock = "Start"
+    $.$clock.title = "Click to stop."
+    $.$clock.ariaLabel = "Click to start."
+    $.$restart.hidden = true
   }
 
-  clearTimeouts() {
+  clear() {
+    tickCoordinator.unsubscribe(this)
     clearTimeout(this.clockTimeoutId)
     clearTimeout(this.alarmTimeoutId)
-    clearInterval(this.audioIntervalId)
-  }
-
-  stopAlarm() {
-    this.clearTimeouts()
-    tickCoordinator.unsubscribe(this)
-    this.$.$audio.pause()
+    this.stopAudio()
+    this.stopAudio = () => { }
   }
 
   startAlarm() {
-    tickCoordinator.unsubscribe(this)
+    this.clear()
     let $ = this.$
-
+    this.state = "alarm"
     $.clock = "Stop"
+    $.$clock.ariaLabel = "Click to start."
     $.$clock.focus()
 
-    let { allowedSounds } = timerStore.data
-    let soundInfo = getAlarm(this.$.$timerForm.sound.value, allowedSounds)
-    if (!soundInfo) return
-
-    this.clearTimeouts()
-
-    let $audio = $.$audio
-    setAttribute($audio, "title", soundInfo.title)
-    setAttribute($audio, "src", soundInfo.url)
-
-    let volume = 1
-    $audio.volume = volume / 100
-    this.audioIntervalId = setInterval(() => {
-      if ($audio && volume < 100) {
-        volume += 1
-        $audio.volume = volume / 100
-      } else {
-        clearInterval(this.audioIntervalId)
-      }
-    }, 1200)
-
-    // Stop audio after 2 minutes
-    this.alarmTimeoutId = setTimeout(() => this.stopAlarm(), 12e4)
-
-    $audio.play()
-      .catch(x => console.error("Audio failed to start.", x))
+    let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
+    if (!sound) return
+    $.$clock.title = sound.title
+    this.stopAudio = playAlarm($.$audio, sound)
+    // Stop the alarm after 2 minutes.
+    this.alarmTimeoutId = setTimeout(() => this.stop(), 12e4)
   }
 
   tick(now: number) {
-    let timeElapsed = (now - this.clockStartedTime) | 0
-    let newTimeLeft = this.totalTime - timeElapsed
-    this.$.clock = formatClock(newTimeLeft)
+    this.$.clock = formatClock(this.totalTime - (now - this.startedAt))
   }
-
-  setValues(timer: TimerData) {
-    let $ = this.$
-    $.title = timer.title
-    $.hours = formatTime(timer.hours)
-    $.minutes = formatTime(timer.minutes)
-    $.seconds = formatTime(timer.seconds)
-  }
-}
-
-function setAttribute(el: HTMLElement, key: string, value: string) {
-  el.setAttribute(key, value)
-}
-
-function removeAttribute(el: HTMLElement, key: string) {
-  el.removeAttribute(key)
 }
 
 interface TimerElements {
-  id: string
-  $id: HTMLInputElement
   title: string
   $title: HTMLInputElement
-  get seconds(): number
-  set seconds(val: string)
-  $seconds: HTMLInputElement
-  get minutes(): number
-  set minutes(val: string)
-  $minutes: HTMLInputElement
-  get hours(): number
-  set hours(val: string)
-  $hours: HTMLInputElement
-  $restart: HTMLButtonElement
+  $titleLabel: HTMLLabelElement
+  hours: number | string
+  minutes: number | string
+  seconds: number | string
   clock: string
   $clock: HTMLButtonElement
+  $restart: HTMLButtonElement
   $audio: HTMLAudioElement
-  $sounds: HTMLFormElement
-  $timerSettings: HTMLDialogElement
-  $openSettings: HTMLButtonElement
-  $titleLabel: HTMLLabelElement
-  $timerForm: HTMLFormElement
+  $sounds: HTMLFieldSetElement
+  $settings: HTMLDialogElement
+  $settingsClose: HTMLButtonElement
+  $settingsForm: HTMLFormElement
 }

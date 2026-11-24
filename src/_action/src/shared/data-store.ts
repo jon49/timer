@@ -1,4 +1,4 @@
-import { TimerData, TimerInfo } from "./types"
+import type { TimerData, TimerInfo } from "./types"
 
 let appStateKey = "timers"
 
@@ -34,24 +34,23 @@ class TimerStore {
         this.save()
     }
 
-    getTimer(id: number) {
+    getTimer(id: number): TimerData {
         return this.data.timers.find(t => t.id == id) ?? { id: id, hours: 0, minutes: 0, seconds: 0, title: "", sound: null }
     }
 
-    getTotalTime(timer: { hours: number, minutes: number, seconds: number }) {
+    getTotalTime(id: number) {
+        let timer = this.data.timers.find(t => t.id === id)
+        if (!timer) return 0
         return timer.hours * 3600 + timer.minutes * 60 + timer.seconds
+    }
+
+    setAllowedSounds(sounds: string[]) {
+        this.data.allowedSounds = sounds
+        this.save()
     }
 
     get timerIds() {
         return this.data.timers.map(t => t.id)
-    }
-
-    get timers() {
-        return this.data.timers
-    }
-
-    get sound() {
-        return this.data.sound
     }
 
     newTimer() {
