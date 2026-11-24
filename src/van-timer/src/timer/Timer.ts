@@ -82,7 +82,7 @@ export function Timer(id: number) {
                 button({ onclick: () => dialogState.val = "opened", ariaLabel: "Timer options", innerHTML: "&#9881;" }),
                 button({ onclick: () => timerState.val = "deleting", ariaLabel: "Delete timer" }, "❌"),
             ),
-            div(() => dialogState.val === "opened" ? TimerSettings(id, dialogState) : div())
+            () => dialogState.val === "opened" ? TimerSettings(id, dialogState) : "",
         ),
     ]
 }

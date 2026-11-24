@@ -39,17 +39,17 @@ saved timers. `./tasks/measure.sh` builds everything and prints this table.
 
 | Implementation | HTML + JS, KB (raw / gzip / brotli) | Source lines | Startup, ms | Add 20 timers, ms | JS heap idle / running, MB | DOM elements | Script time while running, ms/s |
 |---|---|---|---|---|---|---|---|
-| van-timer | 13.3 / 5.6 / 5.0 | 568 | 58 | 29 | 0.88 / 1.75 | 419 | 0.40 |
-| react-timer | 192.5 / 61.2 / 52.7 | 538 | 114 | 69 | 1.45 / 2.63 | 376 | 1.48 |
-| svelte-timer | 67.4 / 25.8 / 23.1 | 509 | 76 | 47 | 1.23 / 2.21 | 376 | 0.95 |
-| solid-timer | 56.0 / 21.6 / 19.5 | 553 | 68 | 37 | 1.06 / 1.98 | 376 | 0.83 |
-| morph-timer | 23.9 / 8.8 / 7.8 | 541 | 48 | 104 | 0.72 / 1.76 | 338 | 0.48 |
-| morph-scoped-timer | 24.4 / 8.9 / 7.9 | 561 | 71 | 11 | 0.73 / 1.73 | 339 | 0.47 |
-| malinajs | 17.1 / 7.0 / 6.2 | 482 | 51 | 27 | 0.84 / 1.71 | 376 | 0.17 |
-| _action | 13.3 / 5.1 / 4.3 | 596 | 55 | 18 | 0.68 / 1.54 | 379 | 0.34 |
-| data-action | 13.5 / 5.1 / 4.3 | 594 | 51 | 18 | 0.68 / 1.54 | 379 | 0.35 |
-| stage-left | 14.6 / 5.6 / 4.8 | 711 | 57 | 19 | 0.76 / 1.62 | 399 | 0.42 |
-| vanilla | 12.9 / 5.0 / 4.2 | 566 | 53 | 19 | 0.68 / 1.54 | 398 | 0.40 |
+| van-timer | 13.3 / 5.6 / 5.0 | 568 | 60 | 27 | 0.88 / 1.75 | 377 | 0.46 |
+| react-timer | 192.5 / 61.2 / 52.7 | 538 | 125 | 77 | 1.45 / 2.63 | 376 | 1.23 |
+| svelte-timer | 67.4 / 25.8 / 23.1 | 509 | 79 | 46 | 1.23 / 2.20 | 376 | 0.94 |
+| solid-timer | 56.0 / 21.6 / 19.5 | 553 | 61 | 33 | 1.06 / 1.98 | 376 | 0.81 |
+| morph-timer | 23.9 / 8.8 / 7.8 | 541 | 47 | 110 | 0.72 / 1.76 | 338 | 0.49 |
+| morph-scoped-timer | 24.4 / 8.9 / 7.9 | 561 | 53 | 11 | 0.73 / 1.73 | 339 | 0.42 |
+| malinajs | 17.1 / 7.0 / 6.2 | 482 | 52 | 27 | 0.84 / 1.71 | 376 | 0.17 |
+| _action | 13.3 / 5.1 / 4.3 | 596 | 73 | 19 | 0.68 / 1.54 | 379 | 0.45 |
+| data-action | 13.5 / 5.1 / 4.3 | 594 | 81 | 18 | 0.68 / 1.54 | 379 | 0.37 |
+| stage-left | 14.6 / 5.6 / 4.8 | 711 | 55 | 19 | 0.76 / 1.62 | 399 | 0.54 |
+| vanilla | 12.9 / 5.0 / 4.2 | 566 | 51 | 20 | 0.68 / 1.54 | 398 | 0.40 |
 
 What each column measures:
 
@@ -79,7 +79,7 @@ What stands out:
   much. VanJS and Malina.js are within 1–2 KB of them, with about the same heap.
 - **Re-rendering everything has a cost, and scoping the render removes it.**
   morph-timer starts as fast as any of them, but each new timer re-renders and
-  morphs every timer, so adding 20 takes the longest (104 ms). morph-scoped-timer
+  morphs every timer, so adding 20 takes the longest (110 ms). morph-scoped-timer
   renders only the new card, and adds them about 10× faster (11 ms), the quickest of
   all. It costs 20 lines of code and 0.1 KB. Both change the same DOM nodes,
   because idiomorph leaves unchanged nodes alone. The time goes to rendering the
@@ -88,8 +88,11 @@ What stands out:
   each timer's settings dialog (12 sound choices) and the all-timers dialog in
   the page, 1,048 elements in all. Now, like the others, they create a dialog
   when it opens. That brings them to 379, and adding timers got about a third
-  faster. VanJS's 43 extra elements are empty `<div>`s it keeps where a dialog
-  goes.
+  faster. VanJS kept two empty `<div>`s for each place a dialog goes (419); it
+  now has 377. What's left comes from the approach: the custom-element versions
+  wrap each card in an `<x-timer>`, the morph versions play the alarm with
+  `new Audio()` instead of an `<audio>` element per timer, and a few pages have
+  a `<template>` or two.
 - **A running timer costs next to nothing anywhere.** Every implementation shares
   one ticker and updates only the clock text, so 20 running timers take under
   1.5 ms of script time a second.

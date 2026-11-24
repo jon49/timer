@@ -4,7 +4,7 @@ import { soundOptions } from "../shared/sounds"
 import { useAllowedSounds } from "../shared/data-store"
 import van, { State } from "vanjs-core"
 
-let { article, button, div, form, h2, h3, header, hr, input, label } = van.tags
+let { article, button, form, h2, h3, header, hr, input, label } = van.tags
 let state = van.state
 
 export function GlobalSettings() {
@@ -16,7 +16,7 @@ export function GlobalSettings() {
             ariaLabel: "Options for all timers",
             innerHTML: "&#9881;"
         }),
-        div(() => dialogState.val === "opened" ? GlobalSettingsDialog(dialogState) : div()),
+        () => dialogState.val === "opened" ? GlobalSettingsDialog(dialogState) : "",
     ]
 }
 
