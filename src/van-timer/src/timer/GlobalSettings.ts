@@ -13,6 +13,7 @@ export function GlobalSettings() {
     return [
         button({
             onclick: () => dialogState.val = "opened",
+            ariaLabel: "Options for all timers",
             innerHTML: "&#9881;"
         }),
         div(() => dialogState.val === "opened" ? GlobalSettingsDialog(dialogState) : div()),
