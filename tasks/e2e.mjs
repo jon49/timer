@@ -26,6 +26,7 @@ export let apps = [
     ["svelte-timer", "/svelte/"],
     ["solid-timer", "/solid/"],
     ["morph-timer", "/morph/"],
+    ["morph-scoped-timer", "/morph-scoped/"],
     ["_action", "/_action/"],
     ["data-action", "/data-action/"],
     ["stage-left", "/stage-left/"],

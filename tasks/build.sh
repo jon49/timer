@@ -18,6 +18,8 @@ mkdir dist
 
 (cd src/morph-timer/ && npm run build) &
 
+(cd src/morph-scoped-timer/ && npm run build) &
+
 (cd src/malinajs/ && npm run build) &
 
 (cd src/van-timer/ && npm run build) &

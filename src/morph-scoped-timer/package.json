@@ -1,0 +1,24 @@
+{
+  "name": "morph-scoped-timer",
+  "version": "1.0.0",
+  "description": "Timer implementation that morphs only the timer or dialog that changed, with HTML template tags, idiomorph and @jon49/web actions",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc --noEmit && vite build --emptyOutDir --outDir ../../dist/morph-scoped --base /morph-scoped/",
+    "check": "tsc --noEmit"
+  },
+  "author": "Jon Nyman",
+  "license": "ISC",
+  "dependencies": {
+    "@jon49/web": "file:../../../jon49-web",
+    "html-template-tag-stream": "^5.0.0",
+    "idiomorph": "^0.7.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vite-plugin-compression2": "^2.5.4"
+  }
+}
