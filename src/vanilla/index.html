@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Timer</title>
+    <title>Vanilla Timer</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/css/pico.min.css" rel="preload" as="style">
@@ -18,12 +18,14 @@
             <ul>
                 <li class="pb-0 pt-0">
                     <h1 class="m-0"><img data-action=addTimer class="pointer" src="/images/timer.svg"
-                            alt="Timer Hourglass logo" style="height: 2em; width: 1.56em;"></img></h1>
+                            alt="Timer Hourglass logo" style="height: 2em; width: 1.56em;"></h1>
                 </li>
             </ul>
             <ul>
                 <li><button data-action=addTimer>Add Timer</button></li>
-                <li><button data-action=editSettings>&#9881;</button></li>
+                <li><button data-action=editSettings aria-label="Options for all timers">&#9881;</button></li>
+                <li><button data-action=downloadData aria-label="Download timer data" title="Download timer data">&#11015;</button></li>
+                <li><button data-action=uploadData aria-label="Upload timer data" title="Upload timer data">&#11014;</button></li>
             </ul>
         </nav>
     </header>
@@ -32,16 +34,13 @@
     </main>
 
     <footer class="container">
-        <a href="https://github.com/jon49/timer">Source Code</a>
-        <br><small> Created with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">Custom
+        <a href="https://github.com/jon49/timer/tree/master/src/vanilla">Source Code</a>
+        <br><small>Created with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">Custom
                 Elements</a>.</small>
         <br><small>Created with <a href="https://www.freesoundeffects.com/">Sounds</a>.</small>
     </footer>
 
-    <div id=dialogs></div>
-
     <script type=module src="/src/main.ts"></script>
-    <script type=module src="/js/pico-modal.js"></script>
 
 </body>
 

@@ -1,19 +1,15 @@
-// Custom element implementation.
-
-interface TimerInfo {
-    sound: string
-    allowedSounds: string[]
-    timers: TimerData[]
-}
-
-interface TimerData {
-    id: number
-    hours: number
-    minutes: number
-    seconds: number
-    title: string
-    sound: string | null
-}
+// Custom element implementation: <x-app> holds the timers, each one an
+// <x-timer>. Elements named with an `x` attribute in a template are reached
+// through a proxy: `$.name` reads or writes an input's value or an element's
+// text, `$.$name` is the element. A `data-action` attribute names the method
+// a click or change on that element calls.
+import { formatClock, getAlarm, playAlarm } from "./shared/alarm"
+import { timerStore } from "./shared/data-store"
+import { downloadData, uploadData } from "./shared/data-transfer"
+import { soundOptions } from "./shared/sounds"
+import { tickCoordinator } from "./shared/tick-coordinator"
+import { formatTime, type TimerState } from "./shared/utils"
+import "./timer-navigation"
 
 const elHandler: ProxyHandler<any> = {
     get(obj, prop: string) {
@@ -23,9 +19,6 @@ const elHandler: ProxyHandler<any> = {
         let val = obj[prop]
         if (!(val instanceof HTMLElement)) return
         if (isInputElement(val)) {
-            if (val.type === "number") {
-                return +val.value
-            }
             return val.value
         }
         return val.textContent
@@ -43,58 +36,24 @@ const elHandler: ProxyHandler<any> = {
     }
 }
 
-const appStateKey = "timers"
-let soundOptions = [
-    ["random", "Random"],
-    ["explosion", "Explosion", "/media/Explosion+2.wav"],
-    ["forest", "Forest", "/media/forest.wav"],
-    ["hag_idle", "Hag Idle", "/media/hag_idle.wav"],
-    ["monster_footsteps", "Monster Footsteps", "/media/Monster_Footsteps.wav"],
-    ["night2", "Night", "/media/night2.wav"],
-    ["rain_start", "Rain", "/media/rain_start.wav"],
-    ["sea", "Sea", "/media/sea.wav"],
-    ["swamp1", "Swamp", "/media/swamp1.wav"],
-    ["thunderrumble", "Thunder Rumble", "/media/thunderrumble.wav"],
-    ["waves", "Waves", "/media/waves.wav"],
-]
-
-interface AppTemplate {
-    $timers: HTMLDivElement
-}
+let alarmSounds = soundOptions.slice(1)
+let limits = { hours: 23, minutes: 59, seconds: 59 }
 
 class App extends HTMLElement {
 
-    data: TimerInfo
-    timers: Timer[]
-    $timers: HTMLDivElement
-    interval: number | null = null
+    $timers: HTMLElement
 
     constructor() {
         super()
-        this.data = JSON.parse(localStorage.getItem(appStateKey) ?? '{"sound":"random","timers":[], "allowedSounds":[]}')
-        if (this.data.allowedSounds == null) {
-            this.data.allowedSounds = []
-        }
-        this.timers = this.data.timers.map(timer => new Timer(timer, this.data))
-
         let appDom = html`<section x=timers class="grid timer-cards"></section>`.content
-
-        this.$timers = (getXElements(appDom) as AppTemplate).$timers
-        this.$timers.append(...this.timers)
-
+        this.$timers = (getXElements(appDom) as { $timers: HTMLElement }).$timers
+        this.$timers.append(...timerStore.data.timers.map(timer => new Timer(timer.id)))
         this.append(appDom)
 
-        for (let event of [
-            "click",
-            "change",
-            "timerUpdated",
-            "clockStarted",
-            "clockStopped",
-            "timerDeleted",
-        ]) {
-            this.addEventListener(event, this)
+        // The header lives outside <x-app>, so listen on the document.
+        for (let event of ["click", "change"]) {
+            document.addEventListener(event, this)
         }
-        document.addEventListener("click", this)
     }
 
     handleEvent(event: Event) {
@@ -102,285 +61,148 @@ class App extends HTMLElement {
     }
 
     addTimer() {
-        let timer: TimerData = {
-            id: Date.now(),
-            hours: 0,
-            minutes: 0,
-            seconds: 0,
-            title: "",
-            sound: null
-        }
-        this.data.timers.push(timer)
-        let timerElement = new Timer(timer, this.data)
-        this.timers.push(timerElement)
-        this.$timers?.append(timerElement)
-        this.save()
+        this.$timers.append(new Timer(timerStore.newTimer().id))
     }
 
-    clockStarted(event: Event) {
-        let target = event.target
-        if (!(target instanceof Timer)) return
-
-        this.tick()
+    downloadData() {
+        downloadData()
     }
 
-    clockStopped(event: Event) {
-        let target = event.target
-        if (!(target instanceof Timer)) return
+    uploadData() {
+        uploadData()
     }
 
     editSettings() {
-        let dialogs = getElementById("dialogs")
-        if (!dialogs) {
-            console.error("Dialogs container not found.")
-            return
+        let allowed = timerStore.data.allowedSounds
+        let dialog = showDialog(`
+<dialog>
+    <article data-box>
+        <header>
+            <button form=modalClose aria-label=Close value=cancel rel=prev></button>
+            <h2 class=inline>Options for All Timers</h2>
+        </header>
+        <h3>Allowed Sounds</h3>
+        <form>
+            <button type=button x=toggle data-action=toggleSounds></button>
+            <hr>
+            ${alarmSounds.map(([value, text]) => `
+            <label>
+                <input type=checkbox data-action=saveAllowedSounds value="${value}" ${allowed.includes(value) ? "checked" : ""}>
+                ${text}
+            </label>`).join("")}
+        </form>
+    </article>
+    <form id=modalClose class=inline method=dialog></form>
+</dialog>`, this)
+        let $ = getXElements(dialog) as { toggle: string }
+        let checkboxes = Array.from(dialog.querySelectorAll<HTMLInputElement>("input[type=checkbox]"))
+        let show = () => {
+            let allowed = timerStore.data.allowedSounds
+            for (let box of checkboxes) box.checked = allowed.includes(box.value)
+            $.toggle = allowed.length === alarmSounds.length ? "Deselect All" : "Select All"
         }
-
-        if (this.data.allowedSounds.length === 0) {
-            this.data.allowedSounds.push(...soundOptions.slice(1).map(([value]) => value))
-        }
-
-        let $options = `
-<x-modal>
-    <dialog>
-        <article id=app-settings-edit box>
-            <header>
-                <button form=modalClose aria-label=Close value=cancel rel=prev></button>
-                <h2 class=inline>Options for All Timers</h2>
-            </header>
-            <h3>Allowed Sounds</h3>
-            <form data-action=saveAllowedSounds>
-            ${soundOptions.slice(1).map(([value, text]) => `
-                <label>
-                    <input type=checkbox value="${value}" ${this.data.allowedSounds.includes(value) ? "checked" : ""}>
-                    ${text}
-                </label>
-            `).join("")}
-            </form>
-            <h3><label class for=sound-all>Specific Sound</label></h3>
-            <select id=sound-all class="w-auto m-0" data-action=saveOption name=sound>
-                ${soundOptions.map(([value, text]) => `
-                <option value="${value}" ${value === this.data.sound ? "selected" : ""}>${text}</option>`).join("")}
-            </select>
-        </article>
-        <form id=modalClose class=inline method=dialog></form>
-    </dialog>
-</x-modal>`
-        dialogs.innerHTML = $options
-        getElementById("app-settings-edit")?.addEventListener("change", this)
+        show()
+        Object.assign(this, {
+            saveAllowedSounds() {
+                timerStore.setAllowedSounds(checkboxes.filter(x => x.checked).map(x => x.value))
+                show()
+            },
+            toggleSounds() {
+                let all = timerStore.data.allowedSounds.length === alarmSounds.length
+                timerStore.setAllowedSounds(all ? [] : alarmSounds.map(([value]) => value))
+                show()
+            },
+        })
     }
-
-    timerUpdated(event: Event) {
-        let target = event.target
-        if (!(target instanceof Timer)) {
-            return
-        }
-
-        let timer = target.timer
-        let index = this.data.timers.findIndex(x => x.id === timer.id)
-        if (index === -1) {
-            console.error("Timer not found.")
-            return
-        }
-        this.data.timers[index] = timer
-        this.save()
-    }
-
-    timerDeleted(event: Event) {
-        let target = event.target
-        if (!(target instanceof Timer)) return
-        let id = target.timer.id
-        target.remove()
-
-        this.data.timers = this.data.timers.filter(x => x.id !== id)
-        this.save()
-    }
-
-    tick() {
-        if (this.interval) return
-        let self = this
-        this.interval = setInterval(() => {
-            requestAnimationFrame(function () {
-                let hasActiveTimer = false
-                for (let timer of self.timers) {
-                    let isActive = timer.tick()
-                    hasActiveTimer = hasActiveTimer || isActive
-                }
-                if (!hasActiveTimer && self.interval) {
-                    clearInterval(self.interval)
-                    self.interval = null
-                }
-            })
-        }, 1e3)
-    }
-
-    saveAllowedSounds(event: Event) {
-        let target = event.target
-        if (!(target instanceof HTMLInputElement || target instanceof HTMLLabelElement)) {
-            return
-        }
-        this.data.allowedSounds = []
-        for (let option of target.form?.querySelectorAll("input[type=checkbox]") ?? []) {
-            if (!(option instanceof HTMLInputElement)) continue
-            if (option.checked) {
-                this.data.allowedSounds.push(option.value)
-            }
-        }
-        this.save()
-    }
-
-    saveOption(event: Event) {
-        let target = event.target
-        if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
-            return
-        }
-
-        let data = this.data
-        switch (target.name) {
-            case "sound":
-                data.sound = target.value
-                break
-        }
-        this.save()
-    }
-
-    save() {
-        localStorage.setItem(appStateKey, JSON.stringify(this.data))
-    }
-
 }
 
 interface TimerTemplate {
-    $title: HTMLInputElement
     title: string
-    timer: string
-    $timeEntry: HTMLFieldSetElement
-    timeEntry: string
-    $hours: HTMLInputElement
-    hours: number | null
-    $minutes: HTMLInputElement
-    minutes: number | null
-    $seconds: HTMLInputElement
-    seconds: number | null
-    $toggle: HTMLButtonElement
-    toggle: string
+    $title: HTMLInputElement
+    $titleLabel: HTMLLabelElement
+    hours: string
+    minutes: string
+    seconds: string
+    clock: string
+    $clock: HTMLButtonElement
     $restart: HTMLButtonElement
-    restart: string
-    $settings: HTMLButtonElement
-    settings: string
-    $delete: HTMLButtonElement
-    delete: string
-    $countdown: HTMLButtonElement
-    countdown: string
     $audio: HTMLAudioElement
-    audio: string
 }
 
 const timerTemplate = html`
 <article>
-<header>
-    <label>
-        <input x=title data-action=save class="plain w-auto" name=title type=text placeholder=Title>
-        <span class=editable-pencil>&#9998;</span>
-    </label>
-</header>
-<div class="flex justify-between">
-
-    <div class="inline reverse">
-        <button
-            x=countdown
-            data-action=stopClock
-            hidden
-            style="width: 140px;
-            title="Click to stop."
-            aria-label="Click to stop."></button>
-
-        <fieldset x=timeEntry class="time-entry m-0" role="group">
-            <!-- Timer input -->
-            <input
-                class="plain clock" data-action=save name=hours type=number x=hours placeholder=h
-            ><input
-                class="plain clock" data-action=save name=minutes type=number x=minutes placeholder=m
-            ><input
-                class="plain clock" data-action=save name=seconds type=number x=seconds placeholder=s>
+    <header class="pb-0">
+        <fieldset role=group>
+            <input x=title data-action=saveTitle class=plain name=title type=text placeholder=Title>
+            <label x=titleLabel aria-label="Timer Title">&#9998;</label>
         </fieldset>
+    </header>
+    <fieldset role=group>
+        <input x=hours data-action=saveTime name=hours type=number placeholder=h>
+        <input x=minutes data-action=saveTime name=minutes type=number placeholder=m>
+        <input x=seconds data-action=saveTime name=seconds type=number placeholder=s>
+    </fieldset>
+    <div class="flex justify-between">
+        <div class=flex>
+            <button x=clock data-action=toggleClock style="width: 140px;"
+                title="Click to stop." aria-label="Click to start.">Start</button>
+            <span hidden><audio x=audio loop></audio></span>
+            <button x=restart data-action=startClock hidden aria-label=Restart>&#8635;</button>
+            <button data-action=editSettings aria-label="Timer options">&#9881;</button>
+            <button data-action=deleteTimer aria-label="Delete timer">❌</button>
+        </div>
     </div>
-
-    <span hidden>
-        <audio x=audio loop></audio>
-    </span>
-
-    <div class="flex">
-        <button x=toggle data-action=toggleClock>Start</button>
-        <button x=restart data-action=restartClock>&#8635;</button>
-        <button x=settings data-action=editSettings>&#9881;</button>
-        <button x=delete data-action=deleteTimer>❌</button>
-    </div>
-
-</div>
-</article>
-`
-
+</article>`
 
 class Timer extends HTMLElement {
-    cache: Map<string, HTMLElement>
-    timer: TimerData
-    info: TimerInfo
-    startedAt: number | null = null
-    totalTime: number | null = null
-    timeoutId: number | undefined
-    alarmTimeoutId: number | undefined | null
+    id_: number
     $: TimerTemplate
-    state: "stopped" | "started" | "alarming" = "stopped"
-    audioFadeIn: number | undefined
+    state: TimerState = "stopped"
+    startedAt = 0
+    totalTime = 0
+    timeoutId: number | undefined
+    alarmTimeoutId: number | undefined
+    stopAudio = () => { }
 
-    constructor(timer: TimerData, timerInfo: TimerInfo) {
+    constructor(id: number) {
         super()
-
-        this.cache = new Map()
-        this.timer = timer
-        this.info = timerInfo
-        let template = timerTemplate.content.cloneNode(true) as DocumentFragment;
-        let node = this.$ = getXElements(template) as TimerTemplate
-
-        node.title = timer.title
-        node.hours = timer.hours
-        node.minutes = timer.minutes
-        node.seconds = timer.seconds
-
+        this.id_ = id
+        let timer = timerStore.getTimer(id)
+        let template = timerTemplate.content.cloneNode(true) as DocumentFragment
+        let $ = this.$ = getXElements(template) as TimerTemplate
+        $.$title.id = `timerTitle${id}`
+        $.$titleLabel.htmlFor = $.$title.id
+        $.title = timer.title
+        for (let name of ["hours", "minutes", "seconds"] as const) $[name] = formatTime(timer[name])
         this.appendChild(template)
-
         this.addEventListener("click", this)
         this.addEventListener("change", this)
-        this.stopClock()
     }
 
     handleEvent(event: Event) {
         handleEvent(this, event)
     }
 
-    save(event: Event) {
-        let target = event.target
-        if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
-            return
-        }
+    get timer() {
+        return timerStore.getTimer(this.id_)
+    }
 
-        let timer = this.timer
-        let value = target.value
-        switch (target.name) {
-            case "hours":
-            case "minutes":
-            case "seconds":
-                timer[target.name] = +value
-                break
-            case "title":
-                timer.title = value
-                break
-            case "sound":
-                timer.sound = value === "default" ? null : value
-                break
+    update(patch: Partial<ReturnType<typeof timerStore.getTimer>>) {
+        timerStore.updateTimer({ ...this.timer, ...patch })
+    }
+
+    saveTitle() {
+        this.update({ title: this.$.title })
+    }
+
+    saveTime(event: Event) {
+        let input = event.target as HTMLInputElement
+        let name = input.name as keyof typeof limits
+        let value = +input.value
+        if (Number.isInteger(value) && value >= 0 && value <= limits[name]) {
+            this.update({ [name]: value })
         }
-        this.sendNotification("timerUpdated")
+        input.value = formatTime(this.timer[name])
     }
 
     toggleClock() {
@@ -391,211 +213,116 @@ class Timer extends HTMLElement {
         }
     }
 
-    stopClock() {
-        // Set defaults when in "stopped" state
-        let $ = this.$
-        clearInterval(this.audioFadeIn)
-        if (this.alarmTimeoutId) clearTimeout(this.alarmTimeoutId)
-        this.alarmTimeoutId = null
-        $.toggle = "Start"
-        show($.$toggle)
-        hide($.$restart)
-        $.$audio.pause()
-        this.clearClock()
-        this.state = "stopped"
-    }
-
+    // Also restarts a running or ringing timer.
     startClock() {
-        // Set defaults when in "started" state
+        this.clearClock()
         let $ = this.$
-        $.toggle = "Stop"
-        hide($.$toggle)
-        show($.$restart)
-        this.setClock()
-        // Start timer
-        this.sendNotification("clockStarted")
-
-        this.timeoutId = setTimeout(() => {
-            this.sendNotification("timerExpired")
-        }, this.getTotalSeconds() * 1e3)
-        this.state = "started"
+        this.state = "running"
+        this.startedAt = Math.floor(Date.now() / 1e3)
+        this.totalTime = timerStore.getTotalTime(this.id_)
+        $.clock = formatClock(this.totalTime)
+        $.$clock.ariaLabel = "Click to stop."
+        $.$restart.hidden = false
+        tickCoordinator.subscribe(this.id_, now => $.clock = formatClock(this.totalTime - (now - this.startedAt)))
+        this.timeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
     }
 
-    restartClock() {
-        this.stopClock()
-        this.startClock()
+    stopClock() {
+        this.clearClock()
+        let $ = this.$
+        this.state = "stopped"
+        $.clock = "Start"
+        $.$clock.title = "Click to stop."
+        $.$clock.ariaLabel = "Click to start."
+        $.$restart.hidden = true
     }
 
-    deleteTimer() {
-        this.sendNotification("timerDeleted")
+    clearClock() {
+        tickCoordinator.unsubscribe(this.id_)
+        clearTimeout(this.timeoutId)
+        clearTimeout(this.alarmTimeoutId)
+        this.stopAudio()
+        this.stopAudio = () => { }
     }
 
     startAlarm() {
         this.clearClock()
-        show(this.$.$toggle)
-
-        let soundInfo = getAlarm(this.timer.sound || this.info.sound, this.info.allowedSounds)
-
-        if (!soundInfo) {
-            this.stopClock()
-            return
-        }
-
-        if (this.alarmTimeoutId) clearTimeout(this.alarmTimeoutId)
-
-        clearTimeout(this.timeoutId)
-        this.timeoutId = void 0
-        this.state = "alarming"
-
-        this.$.$toggle.title = `Click to stop "${soundInfo.title}".`
-
-        let audio = this.$.$audio
-        audio.src = soundInfo.url
-        if (audio) {
-            let volume = 1
-            audio.volume = volume / 100
-            this.audioFadeIn = setInterval(() => {
-                if (volume < 100 && audio) {
-                    volume += 1
-                    audio.volume = volume / 100
-                } else {
-                    clearInterval(this.audioFadeIn)
-                }
-            }, 1200)
-
-            audio.play()
-                // Stop alarm after 1 minute.
-                .then(_ => { this.alarmTimeoutId = setTimeout(() => this.stopClock(), 120e3) })
-                .catch(x => console.error("Audio failed to start.", x))
-        }
+        let $ = this.$
+        this.state = "alarm"
+        $.clock = "Stop"
+        $.$clock.ariaLabel = "Click to start."
+        $.$clock.focus()
+        let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
+        if (!sound) return
+        $.$clock.title = sound.title
+        this.stopAudio = playAlarm($.$audio, sound)
+        // Stop the alarm after 2 minutes.
+        this.alarmTimeoutId = setTimeout(() => this.stopClock(), 12e4)
     }
 
-    clearClock() {
-        let $ = this.$
-        this.startedAt = null
-        $.countdown = ""
-        hide($.$countdown)
-        clearTimeout(this.timeoutId)
-        this.timeoutId = void 0
-        this.sendNotification("clockStopped")
+    deleteTimer() {
+        this.clearClock()
+        timerStore.deleteTimer(this.id_)
+        this.remove()
     }
 
     editSettings() {
-        let dialogs = getElementById("dialogs")
-        if (!dialogs) {
-            console.error("Dialogs container not found.")
-            return
-        }
-        let $options = `
-<x-modal>
-    <dialog>
-    <article box>
+        let sound = this.timer.sound ?? "default"
+        showDialog(`
+<dialog>
+    <article data-box>
         <header>
             <button form=modalClose aria-label=Close value=cancel rel=prev></button>
             <h2 class=inline>Options</h2>
         </header>
-        <label>
-            Sound <br>
-            <select id=option-dialog data-action=save name=sound>
-                <option value=default ${this.timer.sound == null ? "selected" : ""}>Default</option>
-                ${soundOptions.map(([value, text]) => `
-                    <option value="${value}" ${value === this.timer.sound ? "selected" : ""}>${text}</option>
-                `).join("")}
-            </select>
-        </label>
+        <fieldset>
+            <legend>Sound</legend>
+            ${[["default", "Default"], ...soundOptions].map(([value, text]) => `
+            <label>
+                <input type=radio name=sound data-action=saveSound value="${value}" ${value === sound ? "checked" : ""}>
+                ${text}
+            </label>`).join("")}
+        </fieldset>
     </article>
     <form id=modalClose method=dialog></form>
-    </dialog>
-</x-modal>`
-        dialogs.innerHTML = $options
-        getElementById("option-dialog")?.addEventListener("change", this)
+</dialog>`, this)
     }
 
-    setClock(totalSeconds: number | null = null) {
-        totalSeconds ??= this.getTotalSeconds()
-        let hours = formatTime(Math.floor(totalSeconds / 3600))
-        let minutes = formatTime(Math.floor(totalSeconds / 60) % 60)
-        let seconds = formatTime(totalSeconds % 60)
-        this.$.countdown = `${hours}:${minutes}:${seconds}`
-        show(this.$.$countdown)
+    saveSound(event: Event) {
+        let value = (event.target as HTMLInputElement).value
+        this.update({ sound: value === "default" ? null : value })
     }
-
-    getTotalSeconds() {
-        return this.timer.hours * 3600 + this.timer.minutes * 60 + +this.timer.seconds
-    }
-
-    tick(): boolean {
-        if (this.state !== "started") {
-            return false
-        }
-        if (this.startedAt == null) {
-            this.startedAt = Date.now() / 1e3
-            this.totalTime = this.getTotalSeconds()
-        }
-        let now = Date.now() / 1e3
-        let elapsed = now - this.startedAt
-        let timeLeft = Math.round((this.totalTime ?? 0) - elapsed)
-        if (timeLeft <= 0) {
-            this.startAlarm()
-            return false
-        }
-        this.setClock(timeLeft)
-        return true
-    }
-
-    sendNotification(event: string) {
-        this.dispatchEvent(new CustomEvent(event, { bubbles: true }))
-    }
-
 }
 
 customElements.define("x-app", App)
 customElements.define("x-timer", Timer)
 
+document.getElementById("timer")?.append(new App())
 
-let $timer = getElementById("timer")
-$timer?.append(new App())
-
-function show(element: HTMLElement) {
-    if (element instanceof HTMLButtonElement) {
-        element.hidden = false
-    } else {
-        element.style.display = ""
-    }
-}
-
-function hide(element: HTMLElement) {
-    if (element instanceof HTMLButtonElement) {
-        element.hidden = true
-    } else {
-        element.style.display = "none"
-    }
-}
-
-function formatTime(num: number) {
-    return num.toString().padStart(2, "0")
-}
-
-let alarmIds = soundOptions.slice(1).map(([value]) => value)
-function getAlarm(sound: string, allowedSounds: string[]): { url: string, title: string } | undefined {
-    if (sound === "random") {
-        let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
-        return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
-    }
-    let alarm = soundOptions.find(([name]) => name === sound)
-    if (!alarm) return
-    return { url: alarm[2], title: alarm[1] }
-}
-
-function getElementById(id: string) {
-    return document.getElementById(id)
+// Shows `markup` (a <dialog>) as a modal, sending its clicks and changes to
+// `owner`. Clicking the backdrop closes it; closing removes it.
+function showDialog(markup: string, owner: HTMLElement) {
+    let dialog = html([markup] as unknown as TemplateStringsArray).content.firstElementChild as HTMLDialogElement
+    let handler = (event: Event) => handleEvent(owner, event)
+    dialog.addEventListener("change", handler)
+    dialog.addEventListener("click", event => {
+        if (!(event.target as HTMLElement).closest("[data-box]")) {
+            dialog.close()
+        } else {
+            handler(event)
+        }
+    })
+    dialog.addEventListener("close", () => dialog.remove())
+    document.body.append(dialog)
+    dialog.showModal()
+    return dialog
 }
 
 function isInputElement(obj: HTMLElement) {
     return obj instanceof HTMLInputElement || obj instanceof HTMLSelectElement
 }
 
-export function getXElements(fragment: DocumentFragment) {
+function getXElements(fragment: ParentNode) {
     let o = {}
     for (let el of fragment.querySelectorAll(`[x]`)) {
         // @ts-ignore
@@ -607,31 +334,21 @@ export function getXElements(fragment: DocumentFragment) {
 
 function html(templateString: TemplateStringsArray) {
     let template = <HTMLTemplateElement>document.createElement('template')
-    template.innerHTML = templateString[0];
+    template.innerHTML = templateString[0]
     return template
 }
 
 function handleEvent(context: HTMLElement, event: Event) {
-    event.stopPropagation()
-    // event.preventDefault()
     let target = event.target
-    if (target instanceof HTMLElement) {
+    if (!(target instanceof HTMLElement)) return
+    let action = target.dataset.action
+    if (!action) return
+    event.stopPropagation()
+    // @ts-ignore
+    if (context[action] instanceof Function) {
         // @ts-ignore
-        let action = target.dataset.action || target.closest('[data-action]')?.dataset?.action
-        if (action) {
-            // @ts-ignore
-            if (context[action] instanceof Function) {
-                // @ts-ignore
-                context[action](event)
-            } else {
-                console.error(`Action ${action} not implemented.`)
-            }
-        // @ts-ignore
-        } else if (context[event.type] instanceof Function) {
-            // @ts-ignore
-            context[event.type](event)
-        }
+        context[action](event)
+    } else {
+        console.error(`Action ${action} not implemented.`)
     }
 }
-
-export { }
