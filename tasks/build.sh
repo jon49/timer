@@ -12,6 +12,8 @@ mkdir dist
 
 (cd src/_action/ && npm run build) &
 
+(cd src/svelte-timer/ && npm run build) &
+
 (cd src/van-timer/ && npm run build) &
 
 (cd src/van-timer/ && npm run build:main) &
