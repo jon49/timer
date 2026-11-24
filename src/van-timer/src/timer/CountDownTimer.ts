@@ -116,11 +116,13 @@ function formatClock(time: number): string {
 
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
 function getAlarm(sound: string | null, allowedSounds: string[]): { url: string, title: string } | undefined {
-    if (!sound) {
+    // No sound of its own (Default) or "Random" both pick from the allowed sounds.
+    if (!sound || sound === "random") {
         let allowedAlarms = alarmIds.filter(x => allowedSounds.length === 0 || allowedSounds.includes(x))
+        if (allowedAlarms.length === 0) allowedAlarms = alarmIds
         return getAlarm(allowedAlarms[Math.floor(Math.random() * allowedAlarms.length)], allowedSounds)
     }
     let alarm = soundOptions.find(([name]) => name === sound)
-    if (!alarm) return
+    if (!alarm || !alarm[2]) return
     return { url: alarm[2], title: alarm[1] }
 }
