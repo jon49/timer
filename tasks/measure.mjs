@@ -210,11 +210,26 @@ for (let r of results) {
 }
 
 console.log(`Measured ${new Date().toISOString().slice(0, 10)} with Chromium ${browser.version()} on ${os.cpus()[0].model.trim()}, ${TIMERS} saved timers.\n`)
-console.log("| Implementation | Framework | HTML + JS (raw / gzip / brotli KB) | Source lines | Startup (ms, 4× slower CPU) | Add 20 timers (ms, 4× slower CPU) | JS heap idle / running (MB) | DOM elements | Script time while running (ms/s) |")
-console.log("|---|---|---|---|---|---|---|---|---|")
-for (let r of results) {
-    console.log(`| ${r.name} | ${r.framework} | ${kb(r.size.raw)} / ${kb(r.size.gz)} / ${kb(r.size.br)} | ${r.lines} | ${r.startup.toFixed(0)} | ${r.add.toFixed(0)} | ${(r.heapIdle / 2 ** 20).toFixed(2)} / ${(r.heapRunning / 2 ** 20).toFixed(2)} | ${r.domNodes} | ${r.scriptPerSecond.toFixed(2)} |`)
-}
+// The table in README.md. Lower is better in every column, and the best value
+// in each is bold. Values are compared as printed, so a tie is bold in every row.
+let mb = n => (n / 2 ** 20).toFixed(2)
+let columns = [
+    r => [kb(r.size.raw), kb(r.size.gz), kb(r.size.br)],
+    r => [String(r.lines)],
+    r => [r.startup.toFixed(0)],
+    r => [r.add.toFixed(0)],
+    r => [mb(r.heapIdle), mb(r.heapRunning)],
+    r => [String(r.domNodes)],
+    r => [r.scriptPerSecond.toFixed(2)],
+]
+let cells = results.map(r => columns.map(column => column(r)))
+let best = columns.map((_, i) => cells[0][i].map((_, j) => Math.min(...cells.map(row => +row[i][j]))))
+console.log("| Implementation | HTML + JS, KB (raw / gzip / brotli) | Source lines | Startup, ms | Add 20 timers, ms | JS heap idle / running, MB | DOM elements | Script time while running, ms/s |")
+console.log("|---|---|---|---|---|---|---|---|")
+results.forEach((r, k) => {
+    let row = cells[k].map((values, i) => values.map((v, j) => +v === best[i][j] ? `**${v}**` : v).join(" / "))
+    console.log(`| ${r.name} | ${row.join(" | ")} |`)
+})
 console.log("\nRuntime dependencies:\n")
 for (let r of results) console.log(`- ${r.name}: ${r.deps}`)
 if (process.env.VERBOSE) console.error(JSON.stringify(results, null, 2))
