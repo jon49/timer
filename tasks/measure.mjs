@@ -20,6 +20,7 @@ let apps = [
     ["solid-timer", "/solid/", "src/solid-timer", "SolidJS 2", "solid-js, @solidjs/web"],
     ["morph-timer", "/morph/", "src/morph-timer", "HTML template tags + idiomorph", "html-template-tag-stream, idiomorph, @jon49/web"],
     ["morph-scoped-timer", "/morph-scoped/", "src/morph-scoped-timer", "HTML template tags + idiomorph, one element at a time", "html-template-tag-stream, idiomorph, @jon49/web"],
+    ["html-tag-timer", "/html-tag/", "src/html-tag-timer", "HTML template tags, no morphing", "html-template-tag, @jon49/web"],
     ["malinajs", "/malinajs/", "src/malinajs", "Malina.js", "malinajs (compiled in)"],
     ["_action", "/_action/", "src/_action", "`_action` attributes", "none"],
     ["data-action", "/data-action/", "src/data-action", "`data-action` attributes", "none"],

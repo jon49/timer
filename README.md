@@ -6,7 +6,7 @@ A timer page which allows multiple timers to run at the same time.
 
 ## Implementations
 
-The same app is written eleven times, once per directory in `src/`, to compare
+The same app is written twelve times, once per directory in `src/`, to compare
 ways of building a front end. They look and behave the same. `./tasks/e2e.sh`
 runs one set of checks against every build to keep it that way: adding,
 editing and validating timers, the countdown, alarm and restart, the 2-minute
@@ -22,6 +22,7 @@ switch between them without losing your timers.
 | [solid-timer](src/solid-timer) | `/solid/` | [SolidJS 2.0](https://www.solidjs.com/) signals and split effects. |
 | [morph-timer](src/morph-timer) | `/morph/` | Every change renders the whole app with [html-template-tag-stream](https://github.com/jon49/html-template-tag-async) and [idiomorph](https://github.com/bigskysoftware/idiomorph) morphs it in. `_click`/`_change`/`_load` actions come from [@jon49/web](https://github.com/jon49/jon49-web). |
 | [morph-scoped-timer](src/morph-scoped-timer) | `/morph-scoped/` | The same, except each action renders and morphs only what it changed: one timer's card, or the open dialog. |
+| [html-tag-timer](src/html-tag-timer) | `/html-tag/` | The same actions as morph-scoped-timer, with no morphing. Each renders only what it changed (one timer's clock, or the dialog) with [html-template-tag](https://github.com/AntonioVdlC/html-template-tag) and swaps it in with `outerHTML`/`innerHTML`. |
 | [malinajs](src/malinajs) | `/malinajs/` | [Malina.js](https://malinajs.github.io/) components, compiled with Rollup. |
 | [_action](src/_action) | `/_action/` | `<template>` clones and a small `_click="method"` attribute dispatcher. |
 | [data-action](src/data-action) | `/data-action/` | The same, with `data-action="method"` attributes. |
@@ -39,17 +40,18 @@ saved timers. `./tasks/measure.sh` builds everything and prints this table.
 
 | Implementation | HTML + JS, KB (raw / gzip / brotli) | Source lines | Startup, ms | Add 20 timers, ms | JS heap idle / running, MB | DOM elements | Script time while running, ms/s |
 |---|---|---|---|---|---|---|---|
-| van-timer | 13.2 / 5.5 / 4.9 | 568 | 95 | 60 | 0.86 / 1.73 | 376 | 0.42 |
-| react-timer | 192.5 / 61.2 / 52.7 | 538 | 148 | 93 | 1.45 / 2.63 | 376 | 1.12 |
-| svelte-timer | 67.4 / 25.8 / 23.1 | 509 | 102 | 81 | 1.23 / 2.21 | 376 | 0.53 |
-| solid-timer | 56.0 / 21.6 / 19.5 | 553 | 81 | 55 | 1.06 / 1.98 | 376 | 0.76 |
-| morph-timer | 23.9 / 8.8 / 7.8 | 541 | 52 | 144 | 0.72 / 1.76 | 338 | 0.27 |
-| morph-scoped-timer | 24.4 / 8.9 / 7.9 | 561 | 63 | 11 | 0.73 / 1.73 | 339 | 0.23 |
-| malinajs | 17.1 / 7.0 / 6.2 | 482 | 64 | 28 | 0.84 / 1.71 | 376 | 0.15 |
-| _action | 13.2 / 5.0 / 4.3 | 599 | 77 | 23 | 0.68 / 1.55 | 378 | 0.27 |
-| data-action | 13.4 / 5.0 / 4.3 | 597 | 84 | 20 | 0.68 / 1.55 | 378 | 0.29 |
-| stage-left | 14.5 / 5.5 / 4.7 | 711 | 106 | 20 | 0.76 / 1.62 | 398 | 0.24 |
-| vanilla | 12.9 / 4.9 / 4.2 | 569 | 83 | 33 | 0.67 / 1.54 | 397 | 0.25 |
+| van-timer | 13.2 / 5.5 / 4.9 | 568 | 61 | 29 | 0.88 / 1.75 | 376 | 0.40 |
+| react-timer | 192.5 / 61.2 / 52.7 | 538 | 136 | 120 | 1.45 / 2.62 | 376 | 1.33 |
+| svelte-timer | 67.4 / 25.8 / 23.1 | 509 | 86 | 57 | 1.23 / 2.21 | 376 | 0.75 |
+| solid-timer | 56.0 / 21.6 / 19.5 | 553 | 79 | 43 | 1.06 / 1.98 | 376 | 1.03 |
+| morph-timer | 23.9 / 8.8 / 7.8 | 541 | 53 | 114 | 0.72 / 1.76 | 338 | 0.24 |
+| morph-scoped-timer | 24.4 / 8.9 / 7.9 | 561 | 60 | 12 | 0.73 / 1.74 | 339 | 0.26 |
+| html-tag-timer | 14.0 / 5.6 / 4.8 | 555 | 51 | 9 | 0.65 / 1.57 | 338 | 0.19 |
+| malinajs | 17.1 / 7.0 / 6.2 | 482 | 60 | 29 | 0.84 / 1.71 | 376 | 0.15 |
+| _action | 13.2 / 5.0 / 4.3 | 599 | 82 | 19 | 0.68 / 1.55 | 378 | 0.33 |
+| data-action | 13.4 / 5.0 / 4.3 | 597 | 96 | 22 | 0.68 / 1.55 | 378 | 0.24 |
+| stage-left | 14.5 / 5.5 / 4.7 | 711 | 88 | 20 | 0.76 / 1.62 | 398 | 0.28 |
+| vanilla | 12.9 / 4.9 / 4.2 | 569 | 54 | 19 | 0.67 / 1.54 | 397 | 0.22 |
 
 What each column measures:
 
@@ -79,11 +81,21 @@ What stands out:
   much. VanJS and Malina.js are within 1–2 KB of them, with about the same heap.
 - **Re-rendering everything has a cost, and scoping the render removes it.**
   morph-timer starts as fast as any of them, but each new timer re-renders and
-  morphs every timer, so adding 20 takes the longest (144 ms). morph-scoped-timer
-  renders only the new card, and adds them about 13× faster (11 ms), the quickest of
-  all. It costs 20 lines of code and 0.1 KB. Both change the same DOM nodes,
-  because idiomorph leaves unchanged nodes alone. The time goes to rendering the
-  HTML and diffing it.
+  morphs every timer, so adding 20 takes almost as long as React (114 ms against
+  120 ms). morph-scoped-timer renders only the new card, and adds them about 10×
+  faster (12 ms). It costs 20 lines of code and 0.1 KB. Both change the same DOM
+  nodes, because idiomorph leaves unchanged nodes alone. The time goes to
+  rendering the HTML and diffing it.
+- **Once the render is scoped, the morph isn't needed.** html-tag-timer has
+  the same actions as morph-scoped-timer. It sets `outerHTML`/`innerHTML` on
+  the part that changed, and gives the focus back to the element with the same
+  `id`. A start, stop or ring changes only the clock button, so that's all it
+  replaces. Without idiomorph or the streaming templates, it's 4.8 KB brotli
+  against 7.9, the same size as the hand-written ones. It adds 20 timers the
+  fastest of all (9 ms). It stays on html-template-tag 4.0.1: from 4.1 on, the
+  tag checks the HTML so far against 444 attribute names for every value it
+  fills in. That costs about 1 ms per card with the CPU slowed 4×, and tripled
+  the time to add 20 timers (34 ms).
 - **Dialogs that wait in the page add up.** _action and data-action used to keep
   each timer's settings dialog (12 sound choices) and the all-timers dialog in
   the page, 1,048 elements in all. Now, like the others, they create a dialog

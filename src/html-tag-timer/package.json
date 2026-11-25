@@ -1,0 +1,23 @@
+{
+  "name": "html-tag-timer",
+  "version": "1.0.0",
+  "description": "Timer implementation that renders only the clock or dialog that changed, with html-template-tag strings and @jon49/web actions, and no morphing",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc --noEmit && vite build --emptyOutDir --outDir ../../dist/html-tag --base /html-tag/",
+    "check": "tsc --noEmit"
+  },
+  "author": "Jon Nyman",
+  "license": "ISC",
+  "dependencies": {
+    "@jon49/web": "file:../../../jon49-web",
+    "html-template-tag": "4.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vite-plugin-compression2": "^2.5.4"
+  }
+}
