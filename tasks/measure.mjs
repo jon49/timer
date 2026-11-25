@@ -211,7 +211,9 @@ for (let r of results) {
 
 console.log(`Measured ${new Date().toISOString().slice(0, 10)} with Chromium ${browser.version()} on ${os.cpus()[0].model.trim()}, ${TIMERS} saved timers.\n`)
 // The table in README.md. Lower is better in every column, and the best value
-// in each is bold. Values are compared as printed, so a tie is bold in every row.
+// in each is bold and green. Values are compared as printed, so a tie is marked
+// in every row. GitHub drops inline styles, but colors math, so the mark is a
+// `$\color{…}…$` expression.
 let mb = n => (n / 2 ** 20).toFixed(2)
 let columns = [
     r => [kb(r.size.raw), kb(r.size.gz), kb(r.size.br)],
@@ -223,11 +225,12 @@ let columns = [
     r => [r.scriptPerSecond.toFixed(2)],
 ]
 let cells = results.map(r => columns.map(column => column(r)))
+let mark = v => `$\\color{#2da44e}\\mathbf{${v}}$`
 let best = columns.map((_, i) => cells[0][i].map((_, j) => Math.min(...cells.map(row => +row[i][j]))))
 console.log("| Implementation | HTML + JS, KB (raw / gzip / brotli) | Source lines | Startup, ms | Add 20 timers, ms | JS heap idle / running, MB | DOM elements | Script time while running, ms/s |")
 console.log("|---|---|---|---|---|---|---|---|")
 results.forEach((r, k) => {
-    let row = cells[k].map((values, i) => values.map((v, j) => +v === best[i][j] ? `**${v}**` : v).join(" / "))
+    let row = cells[k].map((values, i) => values.map((v, j) => +v === best[i][j] ? mark(v) : v).join(" / "))
     console.log(`| ${r.name} | ${row.join(" | ")} |`)
 })
 console.log("\nRuntime dependencies:\n")
