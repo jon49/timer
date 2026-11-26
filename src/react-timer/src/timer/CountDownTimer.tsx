@@ -39,7 +39,11 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
     // Alarm: play the sound, auto-stop after 2 minutes.
     useEffect(() => {
         if (state !== "alarm") return
-        button.current?.focus()
+        // With the focus ring, even after a mouse click (a plain focus() has none
+        // then). Blurred first, since focusing the button that already has the
+        // focus (Start was clicked) changes nothing.
+        button.current?.blur()
+        button.current?.focus({ focusVisible: true })
         let soundInfo = getAlarm(latest.current.sound, timerStore.data.allowedSounds)
         if (!soundInfo) return
         setAlarmTitle(soundInfo.title)

@@ -164,7 +164,11 @@ export class Timer {
     this.state = "alarm"
     $.clock = "Stop"
     $.$clock.ariaLabel = "Click to start."
-    $.$clock.focus()
+    // With the focus ring, even after a mouse click (a plain focus() has none
+    // then). Blurred first, since focusing the button that already has the
+    // focus (Start was clicked) changes nothing.
+    $.$clock.blur()
+    $.$clock.focus({ focusVisible: true })
     this.showTime()
 
     let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)

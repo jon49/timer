@@ -42,7 +42,11 @@ export function CountDownTimer(props: {
         () => props.state === "alarm" && { sound: props.sound },
         alarm => {
             if (!alarm) return
-            button.focus()
+            // With the focus ring, even after a mouse click (a plain focus() has none
+            // then). Blurred first, since focusing the button that already has the
+            // focus (Start was clicked) changes nothing.
+            button.blur()
+            button.focus({ focusVisible: true })
             const soundInfo = getAlarm(alarm.sound, timerStore.data.allowedSounds)
             if (!soundInfo) return
             setAlarmTitle(soundInfo.title)

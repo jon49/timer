@@ -41,12 +41,14 @@ function handleTimerNavigation(e: KeyboardEvent, $article: HTMLElement, directio
     }
 }
 
-// Enter or Escape in a time's inputs is done editing: the focus goes to the
-// card's clock, so the change saves and the time shows again.
+// Enter or Escape in a time's inputs is done editing: the focus leaves them,
+// so the change saves and the time shows again. Enter moves it on to the
+// card's clock; Escape leaves nothing focused.
 function leaveTimeEntry(e: KeyboardEvent, input: HTMLInputElement) {
     if (e.key !== "Enter" && e.key !== "Escape") return
     let entry = input.closest(".time-entry")
     if (!entry) return
     e.preventDefault()
-    entry.parentElement?.querySelector<HTMLButtonElement>("button.clock")?.focus()
+    if (e.key === "Escape") input.blur()
+    else entry.parentElement?.querySelector<HTMLButtonElement>("button.clock")?.focus()
 }

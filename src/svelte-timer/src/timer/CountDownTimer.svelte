@@ -42,7 +42,11 @@
     // Alarm: play the sound, auto-stop after 2 minutes.
     $effect(() => {
         if (timerState !== "alarm") return
-        button.focus()
+        // With the focus ring, even after a mouse click (a plain focus() has none
+        // then). Blurred first, since focusing the button that already has the
+        // focus (Start was clicked) changes nothing.
+        button.blur()
+        button.focus({ focusVisible: true })
         let soundInfo = getAlarm(untrack(() => sound), timerStore.data.allowedSounds)
         if (!soundInfo) return
         alarmTitle = soundInfo.title

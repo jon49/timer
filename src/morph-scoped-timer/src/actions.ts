@@ -155,7 +155,12 @@ export let actions = {
     // Plays the alarm, and stops on its own after 2 minutes.
     alarm({ el }: AppActionContext) {
         let id = idOf(el)
-        el.closest("button")?.focus()
+        // With the focus ring, even after a mouse click (a plain focus() has none
+        // then). Blurred first, since focusing the button that already has the
+        // focus (Start was clicked) changes nothing.
+        let clock = el.closest("button")
+        clock?.blur()
+        clock?.focus({ focusVisible: true })
         let url = el.dataset.url
         let stopAudio = url ? playAlarm(new Audio(), { url, title: "" }) : () => {}
         let autoStop = setTimeout(() => { stop(id); renderTimer(id) }, 12e4)

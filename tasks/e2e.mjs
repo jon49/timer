@@ -169,7 +169,9 @@ let checks = {
             await wait(100)
             expect(!(await seconds.isVisible()) && await time.isVisible(), `${key} shows the time again`)
             expect(await timeText(card) === shown, `${key} saves the time, shows ${await timeText(card)}`)
-            expect(await clock.evaluate(b => document.activeElement === b), `${key} focuses the clock`)
+            let focused = await page.evaluate(() => document.activeElement?.tagName)
+            if (key === "Enter") expect(await clock.evaluate(b => document.activeElement === b), `Enter focuses the clock, focused ${focused}`)
+            else expect(focused === "BODY", `Escape leaves nothing focused, focused ${focused}`)
         }
         await context.close()
     },
@@ -213,7 +215,8 @@ let checks = {
         await wait(2300)
         expect(await text(clock) === "Stop", `alarm shows ${await text(clock)}`)
         expect(await timeText(card) === "00:00:00", `ringing, the time shows ${await timeText(card)}`)
-        expect(await clock.evaluate(b => document.activeElement === b), "alarm focuses the clock")
+        expect(await clock.evaluate(b => document.activeElement === b && b.matches(":focus-visible")),
+            "alarm focuses the clock with its focus ring, though Start was clicked")
         expect(await clock.getAttribute("title") === "Forest", `alarm title ${await clock.getAttribute("title")}`)
         let a = (await audios(page)).at(-1)
         expect(a?.src === "/media/forest.wav" && !a.paused && a.loop, `audio ${JSON.stringify(a)}`)

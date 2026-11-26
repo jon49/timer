@@ -98,7 +98,11 @@ export function CountDownTimer(id: number, timer: State<TimerData>, timerState: 
             ariaLabel: () => timerState.val === "running" ? "Click to stop." : "Click to start."
         }, () => {
             if (timerState.val === "alarm") {
-                $timer.focus()
+                // With the focus ring, even after a mouse click (a plain focus() has none
+                // then). Blurred first, since focusing the button that already has the
+                // focus (Start was clicked) changes nothing.
+                $timer.blur()
+                $timer.focus({ focusVisible: true })
                 return "Stop"
             } else if (timerState.val === "stopped") {
                 return "Start"

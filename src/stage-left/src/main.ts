@@ -286,7 +286,11 @@ class Timer extends HTMLElement {
         this.clear()
         this.state = "alarm"
         this.template.update({ clock: "Stop", clockLabel: "Click to start." })
-        this.node.clockEl.focus()
+        // With the focus ring, even after a mouse click (a plain focus() has none
+        // then). Blurred first, since focusing the button that already has the
+        // focus (Start was clicked) changes nothing.
+        this.node.clockEl.blur()
+        this.node.clockEl.focus({ focusVisible: true })
         this.showTime()
         let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
         if (!sound) return
