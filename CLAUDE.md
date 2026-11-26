@@ -12,18 +12,20 @@ This repo holds **multiple independent implementations of the same multi-timer w
 
 `html-tag-timer` has the same actions as `morph-scoped-timer`, but no idiomorph. Its views are synchronous `html-template-tag` strings (a nested view goes in with `$${}`, or it gets escaped). That's pinned to 4.0.1, because from 4.1 the tag checks every value it fills in against all known attribute names, which tripled the time to add timers. An action renders only what it changed (one timer's clock button, the allowed-sounds form, or the `#dialog` slot) by setting `outerHTML`/`innerHTML` through the functions in its `render.ts`. A swap gives the focus back to the new element with the same `id`, so a control that can be focused when it's re-rendered needs one.
 
-`src/van-timer` is the **primary, actively maintained** implementation (VanJS + TypeScript + Vite) and is what gets deployed to the main site path. Default work here unless told otherwise.
+`src/html-tag-timer` is the **primary, actively maintained** implementation (html-template-tag + `@jon49/web` actions + TypeScript + Vite) and is what gets deployed to the main site path. Default work here unless told otherwise. `van-timer` used to be the main site; it's now one of the others, at `/van/`.
 
 Shared, framework-agnostic assets (sounds, CSS, images, `manifest.json`) live in the top-level `static/` directory — not inside any implementation. Vite serves it via `publicDir: '../../static'`, so asset URLs are root-relative (e.g. `/media/forest.wav`, `/css/main.css`).
 
 ## Commands
 
-Run inside `src/van-timer`:
+Run inside `src/html-tag-timer`:
 
 - `npm start` — Vite dev server.
-- `npm run check` — typecheck only (`tsc -b --noEmit`). Use this to validate changes; there is no test suite or linter.
-- `npm run build` — typecheck + build to `../../dist/van/` with base `/van/`.
-- `npm run build:main` — typecheck + build to `../../dist/` with base `/` (the main published site).
+- `npm run check` — typecheck only (`tsc --noEmit`). Use this to validate changes; there is no unit test suite or linter (behavior is checked by `./tasks/e2e.sh`).
+- `npm run build` — typecheck + build to `../../dist/html-tag/` with base `/html-tag/`.
+- `npm run build:main` — typecheck + build to `../../dist/` with base `/` (the main published site). It doesn't empty `dist/`, because the other builds write into it at the same time.
+
+Every other implementation has `start` and `build` (to `../../dist/<name>/`), and most have `check`.
 
 Repo-root commands:
 

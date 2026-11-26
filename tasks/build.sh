@@ -26,6 +26,6 @@ mkdir dist
 
 (cd src/van-timer/ && npm run build) &
 
-(cd src/van-timer/ && npm run build:main) &
+(cd src/html-tag-timer/ && npm run build:main) &
 
 wait

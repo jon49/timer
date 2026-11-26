@@ -7,6 +7,7 @@
   "scripts": {
     "start": "vite",
     "build": "tsc --noEmit && vite build --emptyOutDir --outDir ../../dist/html-tag --base /html-tag/",
+    "build:main": "tsc --noEmit && vite build --outDir ../../dist/ --base /",
     "check": "tsc --noEmit"
   },
   "author": "Jon Nyman",

@@ -16,13 +16,13 @@ switch between them without losing your timers.
 
 | Implementation | Path | How it's built |
 |---|---|---|
-| [van-timer](src/van-timer) | `/` and `/van/` | [VanJS](https://vanjs.org/) states and `van.tags`. The main site. |
+| [van-timer](src/van-timer) | `/van/` | [VanJS](https://vanjs.org/) states and `van.tags`. |
 | [react-timer](src/react-timer) | `/react/` | [React 19](https://react.dev/) function components and hooks. |
 | [svelte-timer](src/svelte-timer) | `/svelte/` | [Svelte 5](https://svelte.dev/) with runes. |
 | [solid-timer](src/solid-timer) | `/solid/` | [SolidJS 2.0](https://www.solidjs.com/) signals and split effects. |
 | [morph-timer](src/morph-timer) | `/morph/` | Every change renders the whole app with [html-template-tag-stream](https://github.com/jon49/html-template-tag-async) and [idiomorph](https://github.com/bigskysoftware/idiomorph) morphs it in. `_click`/`_change`/`_load` actions come from [@jon49/web](https://github.com/jon49/jon49-web). |
 | [morph-scoped-timer](src/morph-scoped-timer) | `/morph-scoped/` | The same, except each action renders and morphs only what it changed: one timer's card, or the open dialog. |
-| [html-tag-timer](src/html-tag-timer) | `/html-tag/` | The same actions as morph-scoped-timer, with no morphing. Each renders only what it changed (one timer's clock, or the dialog) with [html-template-tag](https://github.com/AntonioVdlC/html-template-tag) and swaps it in with `outerHTML`/`innerHTML`. |
+| [html-tag-timer](src/html-tag-timer) | `/` and `/html-tag/` | The same actions as morph-scoped-timer, with no morphing. Each renders only what it changed (one timer's clock, or the dialog) with [html-template-tag](https://github.com/AntonioVdlC/html-template-tag) and swaps it in with `outerHTML`/`innerHTML`. The main site. |
 | [malinajs](src/malinajs) | `/malinajs/` | [Malina.js](https://malinajs.github.io/) components, compiled with Rollup. |
 | [_action](src/_action) | `/_action/` | `<template>` clones and a small `_click="method"` attribute dispatcher. |
 | [data-action](src/data-action) | `/data-action/` | The same, with `data-action="method"` attributes. |
