@@ -20,7 +20,6 @@
     } = $props()
 
     let button: HTMLButtonElement
-    let audio: HTMLAudioElement
     let timeLeft = $state(0)
     let alarmTitle = $state("")
 
@@ -46,7 +45,7 @@
         let soundInfo = getAlarm(untrack(() => sound), timerStore.data.allowedSounds)
         if (!soundInfo) return
         alarmTitle = soundInfo.title
-        let stopAudio = playAlarm(audio, soundInfo)
+        let stopAudio = playAlarm(new Audio(), soundInfo)
         let autoStop = setTimeout(() => timerState = "stopped", 12e4)
         return () => {
             clearTimeout(autoStop)
@@ -65,6 +64,7 @@
 
 <button
     bind:this={button}
+    class="clock"
     onclick={toggle}
     style="width: 140px"
     title={timerState === "alarm" ? alarmTitle : "Click to stop."}
@@ -77,4 +77,3 @@
         {formatClock(timeLeft)}
     {/if}
 </button>
-<span hidden><audio bind:this={audio} loop></audio></span>

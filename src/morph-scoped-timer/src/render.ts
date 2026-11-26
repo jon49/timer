@@ -13,8 +13,9 @@ async function text(view: Html) {
     return s
 }
 
+// Returns when this render is done.
 function run(work: () => Promise<void>) {
-    rendering = rendering.then(async () => {
+    return rendering = rendering.then(async () => {
         await work()
         // @jon49/web's "the DOM changed" signal: runs new `_load` components and
         // disconnects the ones that left.
@@ -46,7 +47,7 @@ export function renderTimers() {
 
 // One timer's card, and nothing else.
 export function renderTimer(id: number) {
-    run(async () => morph($(`timer-${id}`), await text(timerView(id)), "outerHTML"))
+    return run(async () => morph($(`timer-${id}`), await text(timerView(id)), "outerHTML"))
 }
 
 // A new timer's card, added after the others.

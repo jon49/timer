@@ -16,6 +16,7 @@ export class Timer {
   root: HTMLElement
   $: TimerElements
   state: TimerState = "stopped"
+  editing = false
   startedAt = 0
   totalTime = 0
   clockTimeoutId = 0
@@ -32,8 +33,16 @@ export class Timer {
     $.title = timer.title
     for (let name of ["hours", "minutes", "seconds"] as const) $[name] = formatTime(timer[name])
 
+    $.$timeEntry.addEventListener("focusin", () => this.editing = true)
+    $.$timeEntry.addEventListener("focusout", e => {
+      if ($.$timeEntry.contains(e.relatedTarget as Node | null)) return
+      this.editing = false
+      this.showTime()
+    })
+
     this.root = root
     root.app = this
+    this.showTime()
     w.timers.append(root)
   }
 
@@ -57,6 +66,25 @@ export class Timer {
       this.update({ [name]: value })
     }
     input.value = formatTime(this.timer[name])
+    // A running timer keeps going; the new time is for its next start.
+    this.showTime()
+  }
+
+  // The time's inputs show while it's being edited, and while it's zero (as a
+  // new timer's is), since there's nothing to show then.
+  showTime() {
+    let $ = this.$
+    let total = timerStore.getTotalTime(this.id)
+    let entry = this.editing || total === 0
+    $.time = formatClock(total)
+    $.$timeButton.hidden = entry
+    $.$timeEntry.hidden = !entry
+  }
+
+  editTime() {
+    this.editing = true
+    this.showTime()
+    this.$.$hours.focus()
   }
 
   openSettings() {
@@ -133,7 +161,7 @@ export class Timer {
     let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
     if (!sound) return
     $.$clock.title = sound.title
-    this.stopAudio = playAlarm($.$audio, sound)
+    this.stopAudio = playAlarm(new Audio(), sound)
     // Stop the alarm after 2 minutes.
     this.alarmTimeoutId = setTimeout(() => this.stop(), 12e4)
   }
@@ -147,11 +175,14 @@ interface TimerElements {
   title: string
   $title: HTMLInputElement
   $titleLabel: HTMLLabelElement
+  time: string
+  $timeButton: HTMLButtonElement
+  $timeEntry: HTMLFieldSetElement
   hours: number | string
+  $hours: HTMLInputElement
   minutes: number | string
   seconds: number | string
   clock: string
   $clock: HTMLButtonElement
   $restart: HTMLButtonElement
-  $audio: HTMLAudioElement
 }

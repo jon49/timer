@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react"
+import { type FocusEvent, useEffect, useRef, useState } from "react"
+import { flushSync } from "react-dom"
+import { formatClock } from "../shared/alarm"
 import { timerStore } from "../shared/data-store"
 import type { TimerData } from "../shared/types"
 import { formatTime, type TimerState } from "../shared/utils"
@@ -12,6 +14,8 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
     let [timerState, setTimerState] = useState<TimerState>("stopped")
     let [startedAt, setStartedAt] = useState(0)
     let [settingsOpen, setSettingsOpen] = useState(false)
+    let [editing, setEditing] = useState(false)
+    let timeEntry = useRef<HTMLFieldSetElement>(null)
 
     useEffect(() => timerStore.updateTimer(timer), [timer])
 
@@ -46,17 +50,35 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
         })
     }
 
+    // The time's inputs show while it's being edited, and while it's zero (as a
+    // new timer's is), since there's nothing to show then. A running timer
+    // keeps going; a new time is for its next start.
+    let total = timer.hours * 3600 + timer.minutes * 60 + timer.seconds
+    let showEntry = editing || total === 0
+
+    function editTime() {
+        flushSync(() => setEditing(true))
+        timeEntry.current?.querySelector("input")?.focus()
+    }
+
+    function leaveTimeEntry(e: FocusEvent<HTMLFieldSetElement>) {
+        if (!e.currentTarget.contains(e.relatedTarget)) setEditing(false)
+    }
+
     return (
         <>
-            <header className="pb-0">
-                <fieldset role="group">
-                    <input id={`timerTitle${id}`} className="plain" ref={onCommit(input => update({ title: input.value }))}
-                        defaultValue={timer.title} name="title" type="text" placeholder="Title" />
-                    <label htmlFor={`timerTitle${id}`} aria-label="Timer Title">&#9998;</label>
-                </fieldset>
+            <header className="timer-title">
+                <label htmlFor={`timerTitle${id}`} aria-label="Timer Title">&#9998;</label>
+                <input id={`timerTitle${id}`} className="plain" ref={onCommit(input => update({ title: input.value }))}
+                    defaultValue={timer.title} name="title" type="text" placeholder="Title" />
+                <button className="plain" onClick={onDelete} aria-label="Delete timer">❌</button>
             </header>
 
-            <fieldset role="group">
+            <button className="plain time" onClick={editTime} title="Edit time" hidden={showEntry}>
+                <span aria-hidden="true">&#9998;</span> {formatClock(total)}
+            </button>
+            <fieldset ref={timeEntry} className="nc-join time-entry" hidden={!showEntry}
+                onFocus={() => setEditing(true)} onBlur={leaveTimeEntry}>
                 <input ref={setValue("hours")} defaultValue={formatTime(timer.hours)} name="hours" type="number" placeholder="h" />
                 <input ref={setValue("minutes")} defaultValue={formatTime(timer.minutes)} name="minutes" type="number" placeholder="m" />
                 <input ref={setValue("seconds")} defaultValue={formatTime(timer.seconds)} name="seconds" type="number" placeholder="s" />
@@ -68,7 +90,6 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
                         onStart={start} onStateChange={setTimerState} />
                     <button onClick={start} hidden={timerState === "stopped"} aria-label="Restart">&#8635;</button>
                     <button onClick={() => setSettingsOpen(true)} aria-label="Timer options">&#9881;</button>
-                    <button onClick={onDelete} aria-label="Delete timer">❌</button>
                 </div>
                 {settingsOpen && (
                     <TimerSettings sound={timer.sound} onSoundChange={sound => update({ sound })}

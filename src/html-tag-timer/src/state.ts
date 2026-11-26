@@ -1,5 +1,6 @@
 // What the page shows that isn't saved: which timers are running or ringing,
-// and which dialog is open. Saved data lives in `timerStore`.
+// whose time is being edited, and which dialog is open. Saved data lives in
+// `timerStore`.
 import { getAlarm } from "./shared/alarm"
 import { timerStore } from "./shared/data-store"
 
@@ -11,6 +12,11 @@ export type Dialog = { type: "global" } | { type: "timer", id: number } | null
 
 export let runs = new Map<number, Run>()
 export let ui = { dialog: null as Dialog }
+export let editing = new Set<number>()
+
+// A timer's time shows as its inputs while it's being edited, and while it's
+// zero (as a new timer's is), since there's nothing to show then.
+export let showsTimeEntry = (id: number) => editing.has(id) || timerStore.getTotalTime(id) === 0
 
 export function start(id: number) {
     let startedAt = Date.now()

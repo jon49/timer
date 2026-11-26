@@ -6,11 +6,12 @@ import van from "vanjs-core"
 import type { State } from "vanjs-core"
 import type { TimerData } from "../shared/types"
 
-let { audio, button, span } = van.tags
+let { button } = van.tags
 let { state, derive } = van
 
 export function CountDownTimer(id: number, timer: State<TimerData>, timerState: State<TimerState>) {
-    let audioEl: HTMLAudioElement = audio({ loop: true })
+    let audioEl = new Audio()
+    audioEl.loop = true
     let clockStartedTime = state(0)
     let totalTime = state(0)
     let timeLeft = state(0)
@@ -90,6 +91,7 @@ export function CountDownTimer(id: number, timer: State<TimerData>, timerState: 
     return [
         ($timer = button({
             onclick: () => timerState.val = timerState.val === "stopped" ? "running" : "stopped",
+            class: "clock",
             style: "width: 140px",
             title: () => timerState.val === "alarm" ? audioEl.title : "Click to stop.",
             ariaLabel: () => timerState.val === "running" ? "Click to stop." : "Click to start."
@@ -102,11 +104,10 @@ export function CountDownTimer(id: number, timer: State<TimerData>, timerState: 
             }
             return formatClock(timeLeft.val)
         })),
-        span({ hidden: true }, audioEl)
     ]
 }
 
-function formatClock(time: number): string {
+export function formatClock(time: number): string {
     if (time < 1) return "00:00:00"
     let hours = Math.floor(time / 3600)
     let minutes = Math.floor((time % 3600) / 60)

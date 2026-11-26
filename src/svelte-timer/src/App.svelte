@@ -54,7 +54,7 @@
     </section>
 </main>
 
-<footer class="container">
+<footer>
     <a href="https://github.com/jon49/timer/tree/master/src/svelte-timer">Source Code</a>
     <br>
     <small>Created with <a href="https://svelte.dev/">Svelte</a></small>

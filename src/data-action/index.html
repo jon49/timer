@@ -5,13 +5,13 @@
   <meta charset="UTF-8">
   <title>data-action Timer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="/css/pico.min.css" rel="preload" as="style">
+  <link href="/css/nimble.css" rel="preload" as="style">
   <link href="/css/main.css" rel="stylesheet">
   <link href="/images/timer.ico" rel="icon" type="image/x-icon">
   <link href="/manifest.json" rel="manifest">
 </head>
 
-<body class="container">
+<body>
 
   <header>
     <nav>
@@ -36,25 +36,24 @@
     <section id="timers" class="grid timer-cards">
       <template id="timerTemplate">
         <article data-root>
-          <header class="pb-0">
-            <fieldset role="group">
-              <input x="title" data-action="saveTitle" class="plain" name="title" type="text" placeholder="Title">
-              <label x="titleLabel" aria-label="Timer Title">&#9998;</label>
-            </fieldset>
+          <header class="timer-title">
+            <label x="titleLabel" aria-label="Timer Title">&#9998;</label>
+            <input x="title" data-action="saveTitle" class="plain" name="title" type="text" placeholder="Title">
+            <button data-action="deleteTimer" class="plain" aria-label="Delete timer">❌</button>
           </header>
-          <fieldset role="group">
+          <button x="timeButton" data-action="editTime" class="plain time" title="Edit time"
+            ><span aria-hidden="true">&#9998;</span> <span x="time"></span></button>
+          <fieldset x="timeEntry" class="nc-join time-entry">
             <input x="hours" data-action="saveTime" name="hours" type="number" placeholder="h">
             <input x="minutes" data-action="saveTime" name="minutes" type="number" placeholder="m">
             <input x="seconds" data-action="saveTime" name="seconds" type="number" placeholder="s">
           </fieldset>
           <div class="flex justify-between">
             <div class="flex">
-              <button x="clock" data-action="toggleTimerState" style="width: 140px;"
+              <button x="clock" class="clock" data-action="toggleTimerState" style="width: 140px;"
                 title="Click to stop." aria-label="Click to start.">Start</button>
-              <span hidden><audio x="audio" loop></audio></span>
               <button x="restart" data-action="start" hidden aria-label="Restart">&#8635;</button>
               <button data-action="openSettings" aria-label="Timer options">&#9881;</button>
-              <button data-action="deleteTimer" aria-label="Delete timer">❌</button>
             </div>
           </div>
         </article>
@@ -92,7 +91,7 @@
     </dialog>
   </template>
 
-  <footer class="container">
+  <footer>
     <a href="https://github.com/jon49/timer/tree/master/src/data-action">Source Code</a>
     <br>
     <small>Created with <a href="https://github.com/jon49/timer/blob/master/src/data-action/src/shared/data-action.ts">data-action attributes</a></small>

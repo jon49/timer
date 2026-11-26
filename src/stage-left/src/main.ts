@@ -117,6 +117,7 @@ const timerSettingsTemplate = html`
 interface TimerTemplate {
     titleId: string
     title: string
+    time: string
     hours: string
     minutes: string
     seconds: string
@@ -124,34 +125,34 @@ interface TimerTemplate {
     clockTitle: string
     clockLabel: string
     titleEl: HTMLInputElement
+    timeButtonEl: HTMLButtonElement
+    timeEntryEl: HTMLFieldSetElement
     hoursEl: HTMLInputElement
     minutesEl: HTMLInputElement
     secondsEl: HTMLInputElement
     clockEl: HTMLButtonElement
     restartEl: HTMLButtonElement
-    audioEl: HTMLAudioElement
 }
 
 const timerTemplate = html<TimerTemplate>`
 <article>
-    <header class="pb-0">
-        <fieldset role=group>
-            <input #=titleEl #id=titleId #value=title data-action=saveTitle class=plain name=title type=text placeholder=Title>
-            <label #for=titleId aria-label="Timer Title">&#9998;</label>
-        </fieldset>
+    <header class=timer-title>
+        <label #for=titleId aria-label="Timer Title">&#9998;</label>
+        <input #=titleEl #id=titleId #value=title data-action=saveTitle class=plain name=title type=text placeholder=Title>
+        <button data-action=deleteTimer class=plain aria-label="Delete timer">❌</button>
     </header>
-    <fieldset role=group>
+    <button #=timeButtonEl data-action=editTime class="plain time" title="Edit time"
+        ><span aria-hidden=true>&#9998;</span> <span>#time</span></button>
+    <fieldset #=timeEntryEl class="nc-join time-entry">
         <input #=hoursEl #value=hours data-action=saveTime name=hours type=number placeholder=h>
         <input #=minutesEl #value=minutes data-action=saveTime name=minutes type=number placeholder=m>
         <input #=secondsEl #value=seconds data-action=saveTime name=seconds type=number placeholder=s>
     </fieldset>
     <div class="flex justify-between">
         <div class=flex>
-            <button #=clockEl #title=clockTitle #aria-label=clockLabel data-action=toggleClock style="width: 140px;">#clock</button>
-            <span hidden><audio #=audioEl loop></audio></span>
+            <button #=clockEl #title=clockTitle #aria-label=clockLabel class=clock data-action=toggleClock style="width: 140px;">#clock</button>
             <button #=restartEl data-action=startClock aria-label=Restart>&#8635;</button>
             <button data-action=editSettings aria-label="Timer options">&#9881;</button>
-            <button data-action=deleteTimer aria-label="Delete timer">❌</button>
         </div>
     </div>
 </article>`
@@ -159,8 +160,9 @@ const timerTemplate = html<TimerTemplate>`
 class Timer extends HTMLElement {
     id_: number
     template: ReturnType<typeof timerTemplate>
-    node: Pick<TimerTemplate, "titleEl" | "clockEl" | "restartEl" | "audioEl">
+    node: Pick<TimerTemplate, "titleEl" | "timeButtonEl" | "timeEntryEl" | "hoursEl" | "clockEl" | "restartEl">
     state: TimerState = "stopped"
+    editing = false
     startedAt = 0
     totalTime = 0
     timeoutId: number | undefined
@@ -178,10 +180,17 @@ class Timer extends HTMLElement {
             minutes: formatTime(timer.minutes),
             seconds: formatTime(timer.seconds),
         })
-        this.node = template.getNodes(["titleEl", "clockEl", "restartEl", "audioEl"]) as any
+        let node = this.node = template.getNodes(["titleEl", "timeButtonEl", "timeEntryEl", "hoursEl", "clockEl", "restartEl"]) as any
         this.appendChild(template.root)
         this.addEventListener("click", this)
         this.addEventListener("change", this)
+        node.timeEntryEl.addEventListener("focusin", () => this.editing = true)
+        node.timeEntryEl.addEventListener("focusout", (e: FocusEvent) => {
+            if (node.timeEntryEl.contains(e.relatedTarget as Node | null)) return
+            this.editing = false
+            this.showTime()
+        })
+        this.showTime()
         this.showStopped()
     }
 
@@ -209,6 +218,24 @@ class Timer extends HTMLElement {
             this.update({ [name]: value })
         }
         input.value = formatTime(this.timer[name])
+        // A running timer keeps going; the new time is for its next start.
+        this.showTime()
+    }
+
+    // The time's inputs show while it's being edited, and while it's zero (as a
+    // new timer's is), since there's nothing to show then.
+    showTime() {
+        let total = timerStore.getTotalTime(this.id_)
+        let entry = this.editing || total === 0
+        this.template.update({ time: formatClock(total) })
+        this.node.timeButtonEl.hidden = entry
+        this.node.timeEntryEl.hidden = !entry
+    }
+
+    editTime() {
+        this.editing = true
+        this.showTime()
+        this.node.hoursEl.focus()
     }
 
     toggleClock() {
@@ -259,7 +286,7 @@ class Timer extends HTMLElement {
         let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
         if (!sound) return
         this.template.update({ clockTitle: sound.title })
-        this.stopAudio = playAlarm(this.node.audioEl, sound)
+        this.stopAudio = playAlarm(new Audio(), sound)
         // Stop the alarm after 2 minutes.
         this.alarmTimeoutId = setTimeout(() => this.stopClock(), 12e4)
     }

@@ -13,7 +13,6 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
     onStateChange: (state: TimerState) => void
 }) {
     let button = useRef<HTMLButtonElement>(null)
-    let audio = useRef<HTMLAudioElement>(null)
     let [timeLeft, setTimeLeft] = useState(0)
     let [alarmTitle, setAlarmTitle] = useState("")
     // The latest values, for effects that shouldn't re-run when they change.
@@ -42,7 +41,7 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
         let soundInfo = getAlarm(latest.current.sound, timerStore.data.allowedSounds)
         if (!soundInfo) return
         setAlarmTitle(soundInfo.title)
-        let stopAudio = playAlarm(audio.current!, soundInfo)
+        let stopAudio = playAlarm(new Audio(), soundInfo)
         let autoStop = setTimeout(() => latest.current.onStateChange("stopped"), 12e4)
         return () => {
             clearTimeout(autoStop)
@@ -56,16 +55,14 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
     }
 
     return (
-        <>
-            <button
-                ref={button}
-                onClick={toggle}
-                style={{ width: "140px" }}
-                title={state === "alarm" ? alarmTitle : "Click to stop."}
-                aria-label={state === "running" ? "Click to stop." : "Click to start."}>
-                {state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}
-            </button>
-            <span hidden><audio ref={audio} loop></audio></span>
-        </>
+        <button
+            ref={button}
+            className="clock"
+            onClick={toggle}
+            style={{ width: "140px" }}
+            title={state === "alarm" ? alarmTitle : "Click to stop."}
+            aria-label={state === "running" ? "Click to stop." : "Click to start."}>
+            {state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}
+        </button>
     )
 }

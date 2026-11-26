@@ -13,7 +13,6 @@ export function CountDownTimer(props: {
     onStateChange: (state: TimerState) => void
 }) {
     let button!: HTMLButtonElement
-    let audio!: HTMLAudioElement
     const [timeLeft, setTimeLeft] = createSignal(0)
     const [alarmTitle, setAlarmTitle] = createSignal("")
 
@@ -45,7 +44,7 @@ export function CountDownTimer(props: {
             const soundInfo = getAlarm(alarm.sound, timerStore.data.allowedSounds)
             if (!soundInfo) return
             setAlarmTitle(soundInfo.title)
-            const stopAudio = playAlarm(audio, soundInfo)
+            const stopAudio = playAlarm(new Audio(), soundInfo)
             const autoStop = setTimeout(() => props.onStateChange("stopped"), 12e4)
             return () => {
                 clearTimeout(autoStop)
@@ -62,20 +61,18 @@ export function CountDownTimer(props: {
     }
 
     return (
-        <>
-            <button
-                ref={button}
-                onClick={toggle}
-                style={{ width: "140px" }}
-                title={props.state === "alarm" ? alarmTitle() : "Click to stop."}
-                aria-label={props.state === "running" ? "Click to stop." : "Click to start."}>
-                {props.state === "alarm"
-                    ? "Stop"
-                    : props.state === "stopped"
-                        ? "Start"
-                        : formatClock(timeLeft())}
-            </button>
-            <span hidden><audio ref={audio} loop /></span>
-        </>
+        <button
+            ref={button}
+            class="clock"
+            onClick={toggle}
+            style={{ width: "140px" }}
+            title={props.state === "alarm" ? alarmTitle() : "Click to stop."}
+            aria-label={props.state === "running" ? "Click to stop." : "Click to start."}>
+            {props.state === "alarm"
+                ? "Stop"
+                : props.state === "stopped"
+                    ? "Start"
+                    : formatClock(timeLeft())}
+        </button>
     )
 }

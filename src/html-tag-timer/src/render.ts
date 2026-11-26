@@ -1,7 +1,7 @@
 // Puts views into the page. Each function renders only what one kind of change
 // touches, by setting `innerHTML`/`outerHTML` on it.
-import { runs } from "./state"
-import { allowedSoundsView, clockView, dialogView, timersView, timerView } from "./views"
+import { runs, showsTimeEntry } from "./state"
+import { allowedSoundsView, clockView, dialogView, timersView, timeView, timerView } from "./views"
 
 let $ = (id: string) => document.getElementById(id)
 
@@ -29,6 +29,14 @@ export function renderClock(id: number) {
     swap($(`clock-${id}`), clockView(id), "outerHTML")
     let restart = $(`restart-${id}`)
     if (restart) restart.hidden = !runs.has(id)
+}
+
+// A timer's time, after it changes or its inputs show or hide. The inputs are
+// only shown or hidden, so the one being typed in stays as it is.
+export function renderTime(id: number) {
+    swap($(`time-${id}`), timeView(id), "outerHTML")
+    let entry = $(`time-entry-${id}`)
+    if (entry) entry.hidden = !showsTimeEntry(id)
 }
 
 // A new timer's card, added after the others.

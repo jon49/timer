@@ -8,8 +8,8 @@ import { downloadData, uploadData } from "./shared/data-transfer"
 import { soundOptions } from "./shared/sounds"
 import { tickCoordinator } from "./shared/tick-coordinator"
 import { formatTime } from "./shared/utils"
-import { appendTimer, removeTimer, renderAllowedSounds, renderClock, renderDialog } from "./render"
-import { ring, start, stop, ui } from "./state"
+import { appendTimer, removeTimer, renderAllowedSounds, renderClock, renderDialog, renderTime } from "./render"
+import { editing, ring, start, stop, ui } from "./state"
 
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
 let limits = { hours: 23, minutes: 59, seconds: 59 }
@@ -19,6 +19,23 @@ let idOf = (el: HTMLElement) => +(el.dataset.id ?? 0)
 function updateTimer(id: number, patch: Partial<ReturnType<typeof timerStore.getTimer>>) {
     timerStore.updateTimer({ ...timerStore.getTimer(id), ...patch })
 }
+
+// A time's inputs are being edited while the focus is in them. When it leaves
+// them, the time shows again (unless it's zero). One listener for every card,
+// rather than a `_load` component each: starting those means a new card has to
+// send `hz:completed`, which scans the whole page.
+let timeEntryOf = (target: EventTarget | null) =>
+    target instanceof Element ? target.closest<HTMLElement>(".time-entry") : null
+document.addEventListener("focusin", e => {
+    let entry = timeEntryOf(e.target)
+    if (entry) editing.add(idOf(entry))
+})
+document.addEventListener("focusout", e => {
+    let entry = timeEntryOf(e.target)
+    if (!entry || entry.contains(e.relatedTarget as Node | null)) return
+    editing.delete(idOf(entry))
+    renderTime(idOf(entry))
+})
 
 export let actions = {
     addTimer() {
@@ -44,8 +61,17 @@ export let actions = {
         if (Number.isInteger(value) && value >= 0 && value <= limits[name]) {
             updateTimer(id, { [name]: value })
         }
-        // Nothing else shows the time, so the input is all there is to update.
         input.value = formatTime(timerStore.getTimer(id)[name])
+        // A running timer keeps going; the new time is for its next start.
+        renderTime(id)
+    },
+
+    // Shows the time's inputs in place of the time.
+    editTime({ el }: AppActionContext) {
+        let id = idOf(el)
+        editing.add(id)
+        renderTime(id)
+        document.querySelector<HTMLInputElement>(`#time-entry-${id} input`)?.focus()
     },
 
     start({ el }: AppActionContext) {

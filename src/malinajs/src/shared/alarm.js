@@ -24,6 +24,7 @@ function getAlarm(sound, allowedSounds) {
 function playAlarm(audio, sound) {
   audio.title = sound.title;
   audio.src = sound.url;
+  audio.loop = true;
   let volume = 1;
   audio.volume = volume / 100;
   let fadeIn = setInterval(() => {

@@ -123,36 +123,38 @@ interface TimerTemplate {
     title: string
     $title: HTMLInputElement
     $titleLabel: HTMLLabelElement
+    time: string
+    $timeButton: HTMLButtonElement
+    $timeEntry: HTMLFieldSetElement
     hours: string
+    $hours: HTMLInputElement
     minutes: string
     seconds: string
     clock: string
     $clock: HTMLButtonElement
     $restart: HTMLButtonElement
-    $audio: HTMLAudioElement
 }
 
 const timerTemplate = html`
 <article>
-    <header class="pb-0">
-        <fieldset role=group>
-            <input x=title data-action=saveTitle class=plain name=title type=text placeholder=Title>
-            <label x=titleLabel aria-label="Timer Title">&#9998;</label>
-        </fieldset>
+    <header class=timer-title>
+        <label x=titleLabel aria-label="Timer Title">&#9998;</label>
+        <input x=title data-action=saveTitle class=plain name=title type=text placeholder=Title>
+        <button data-action=deleteTimer class=plain aria-label="Delete timer">❌</button>
     </header>
-    <fieldset role=group>
+    <button x=timeButton data-action=editTime class="plain time" title="Edit time"
+        ><span aria-hidden=true>&#9998;</span> <span x=time></span></button>
+    <fieldset x=timeEntry class="nc-join time-entry">
         <input x=hours data-action=saveTime name=hours type=number placeholder=h>
         <input x=minutes data-action=saveTime name=minutes type=number placeholder=m>
         <input x=seconds data-action=saveTime name=seconds type=number placeholder=s>
     </fieldset>
     <div class="flex justify-between">
         <div class=flex>
-            <button x=clock data-action=toggleClock style="width: 140px;"
+            <button x=clock class=clock data-action=toggleClock style="width: 140px;"
                 title="Click to stop." aria-label="Click to start.">Start</button>
-            <span hidden><audio x=audio loop></audio></span>
             <button x=restart data-action=startClock hidden aria-label=Restart>&#8635;</button>
             <button data-action=editSettings aria-label="Timer options">&#9881;</button>
-            <button data-action=deleteTimer aria-label="Delete timer">❌</button>
         </div>
     </div>
 </article>`
@@ -161,6 +163,7 @@ class Timer extends HTMLElement {
     id_: number
     $: TimerTemplate
     state: TimerState = "stopped"
+    editing = false
     startedAt = 0
     totalTime = 0
     timeoutId: number | undefined
@@ -180,6 +183,13 @@ class Timer extends HTMLElement {
         this.appendChild(template)
         this.addEventListener("click", this)
         this.addEventListener("change", this)
+        $.$timeEntry.addEventListener("focusin", () => this.editing = true)
+        $.$timeEntry.addEventListener("focusout", e => {
+            if ($.$timeEntry.contains(e.relatedTarget as Node | null)) return
+            this.editing = false
+            this.showTime()
+        })
+        this.showTime()
     }
 
     handleEvent(event: Event) {
@@ -206,6 +216,25 @@ class Timer extends HTMLElement {
             this.update({ [name]: value })
         }
         input.value = formatTime(this.timer[name])
+        // A running timer keeps going; the new time is for its next start.
+        this.showTime()
+    }
+
+    // The time's inputs show while it's being edited, and while it's zero (as a
+    // new timer's is), since there's nothing to show then.
+    showTime() {
+        let $ = this.$
+        let total = timerStore.getTotalTime(this.id_)
+        let entry = this.editing || total === 0
+        $.time = formatClock(total)
+        $.$timeButton.hidden = entry
+        $.$timeEntry.hidden = !entry
+    }
+
+    editTime() {
+        this.editing = true
+        this.showTime()
+        this.$.$hours.focus()
     }
 
     toggleClock() {
@@ -258,7 +287,7 @@ class Timer extends HTMLElement {
         let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
         if (!sound) return
         $.$clock.title = sound.title
-        this.stopAudio = playAlarm($.$audio, sound)
+        this.stopAudio = playAlarm(new Audio(), sound)
         // Stop the alarm after 2 minutes.
         this.alarmTimeoutId = setTimeout(() => this.stopClock(), 12e4)
     }

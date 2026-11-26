@@ -86,7 +86,7 @@ function App() {
                 class: "grid timer-cards",
             }, timerStore.timerIds.map(id => createTimer(id)))),
 
-        footer({ class: "container" },
+        footer(
             a({ href: "https://github.com/jon49/timer/tree/master/src/van-timer" }, "Source Code"),
             br(),
             small(`Created with `, a({ href: "https://vanjs.org/" }, "Van JS")),

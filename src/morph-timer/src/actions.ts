@@ -8,7 +8,7 @@ import { soundOptions } from "./shared/sounds"
 import { tickCoordinator } from "./shared/tick-coordinator"
 import { formatTime } from "./shared/utils"
 import { render } from "./render"
-import { ring, start, stop, ui } from "./state"
+import { editing, ring, start, stop, ui } from "./state"
 
 let alarmIds = soundOptions.slice(1).map(([value]) => value)
 let limits = { hours: 23, minutes: 59, seconds: 59 }
@@ -47,7 +47,16 @@ export let actions = {
         }
         // The morph leaves the focused input alone, so normalize it here.
         input.value = formatTime(timerStore.getTimer(id)[name])
+        // A running timer keeps going; the new time is for its next start.
         render()
+    },
+
+    // Shows the time's inputs in place of the time.
+    async editTime({ el }: AppActionContext) {
+        let id = idOf(el)
+        editing.add(id)
+        await render()
+        document.querySelector<HTMLInputElement>(`#time-entry-${id} input`)?.focus()
     },
 
     start({ el }: AppActionContext) {
@@ -108,6 +117,26 @@ export let actions = {
         dialog.addEventListener("close", onClose)
         dialog.showModal()
         return { disconnectedCallback: () => dialog.removeEventListener("close", onClose) }
+    },
+
+    // The time's inputs: being edited while the focus is in them. When it
+    // leaves, the time shows again (unless it's zero).
+    timeEntry({ el }: AppActionContext) {
+        let id = idOf(el)
+        let onFocusIn = () => editing.add(id)
+        let onFocusOut = (e: FocusEvent) => {
+            if (el.contains(e.relatedTarget as Node | null)) return
+            editing.delete(id)
+            render()
+        }
+        el.addEventListener("focusin", onFocusIn)
+        el.addEventListener("focusout", onFocusOut)
+        return {
+            disconnectedCallback() {
+                el.removeEventListener("focusin", onFocusIn)
+                el.removeEventListener("focusout", onFocusOut)
+            }
+        }
     },
 
     // Counts down from the wall clock, then rings.

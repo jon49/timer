@@ -25,6 +25,7 @@ export function getAlarm(sound: string | null, allowedSounds: string[]): { url: 
 export function playAlarm(audio: HTMLAudioElement, sound: { url: string, title: string }) {
     audio.title = sound.title
     audio.src = sound.url
+    audio.loop = true
     let volume = 1
     audio.volume = volume / 100
     let fadeIn = setInterval(() => {

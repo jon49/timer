@@ -29,3 +29,6 @@ mkdir dist
 (cd src/html-tag-timer/ && npm run build:main) &
 
 wait
+
+# Give the files without a hash in their name one in their URL.
+node tasks/version-assets.mjs

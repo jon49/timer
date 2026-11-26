@@ -9,7 +9,8 @@ A timer page which allows multiple timers to run at the same time.
 The same app is written twelve times, once per directory in `src/`, to compare
 ways of building a front end. They look and behave the same. `./tasks/e2e.sh`
 runs one set of checks against every build to keep it that way: adding,
-editing and validating timers, the countdown, alarm and restart, the 2-minute
+editing and validating timers (the time takes a click to edit, and a running
+timer keeps going), the countdown, alarm and restart, the 2-minute
 auto-stop, sounds, both options dialogs, delete, download/upload and arrow-key
 navigation. They all keep their data in the same `localStorage` key, so you can
 switch between them without losing your timers.
@@ -22,43 +23,43 @@ switch between them without losing your timers.
 | [solid-timer](src/solid-timer) | `/solid/` | [SolidJS 2.0](https://www.solidjs.com/) signals and split effects. |
 | [morph-timer](src/morph-timer) | `/morph/` | Every change renders the whole app with [html-template-tag-stream](https://github.com/jon49/html-template-tag-async) and [idiomorph](https://github.com/bigskysoftware/idiomorph) morphs it in. `_click`/`_change`/`_load` actions come from [@jon49/web](https://github.com/jon49/jon49-web). |
 | [morph-scoped-timer](src/morph-scoped-timer) | `/morph-scoped/` | The same, except each action renders and morphs only what it changed: one timer's card, or the open dialog. |
-| [html-tag-timer](src/html-tag-timer) | `/` and `/html-tag/` | The same actions as morph-scoped-timer, with no morphing. Each renders only what it changed (one timer's clock, or the dialog) with [html-template-tag](https://github.com/AntonioVdlC/html-template-tag) and swaps it in with `outerHTML`/`innerHTML`. The main site. |
+| [html-tag-timer](src/html-tag-timer) | `/` and `/html-tag/` | The same actions as morph-scoped-timer, with no morphing. Each renders only what it changed (one timer's clock or time, or the dialog) with [html-template-tag](https://github.com/AntonioVdlC/html-template-tag) and swaps it in with `outerHTML`/`innerHTML`. The main site. |
 | [malinajs](src/malinajs) | `/malinajs/` | [Malina.js](https://malinajs.github.io/) components, compiled with Rollup. |
 | [_action](src/_action) | `/_action/` | `<template>` clones and a small `_click="method"` attribute dispatcher. |
 | [data-action](src/data-action) | `/data-action/` | The same, with `data-action="method"` attributes. |
 | [stage-left](src/stage-left) | `/stage-left/` | Custom elements rendered with the `stage-left` template library in the directory. |
 | [vanilla](src/vanilla) | `/vanilla/` | Custom elements and DOM APIs only. |
 
-Shared assets (Pico CSS, `main.css`, images and sounds) live in `static/`. Each
+Shared assets ([nimble.css](https://github.com/Leftium/nimble.css), `main.css`, images and sounds) live in `static/`. Each
 implementation keeps its own copy of the few framework-neutral modules (the
 store, alarm, ticker and download/upload), so each one stands alone.
 
 ## Comparison
 
-Measured 2026-11-24 with Chromium 145 on an Intel Core i5-1235U laptop, with 20
+Measured 2026-11-25 with Chromium 145 on an Intel Core i5-1235U laptop, with 20
 saved timers. `./tasks/measure.sh` builds everything and prints this table.
 
 | Implementation | HTML + JS, KB (raw / gzip / brotli) | Source lines | Startup, ms | Add 20 timers, ms | JS heap idle / running, MB | DOM elements | Script time while running, ms/s |
 |---|---|---|---|---|---|---|---|
-| van-timer | 13.2 / 5.5 / 4.9 | 568 | 61 | 29 | 0.88 / 1.75 | 376 | 0.40 |
-| react-timer | 192.5 / 61.2 / 52.7 | 538 | 136 | 120 | 1.45 / 2.62 | 376 | 1.33 |
-| svelte-timer | 67.4 / 25.8 / 23.1 | 509 | 86 | 57 | 1.23 / 2.21 | 376 | 0.75 |
-| solid-timer | 56.0 / 21.6 / 19.5 | 553 | 79 | 43 | 1.06 / 1.98 | 376 | 1.03 |
-| morph-timer | 23.9 / 8.8 / 7.8 | 541 | 53 | 114 | 0.72 / 1.76 | $\color{#2da44e}\mathbf{338}$ | 0.24 |
-| morph-scoped-timer | 24.4 / 8.9 / 7.9 | 561 | 60 | 12 | 0.73 / 1.74 | 339 | 0.26 |
-| html-tag-timer | 14.0 / 5.6 / 4.8 | 555 | $\color{#2da44e}\mathbf{51}$ | $\color{#2da44e}\mathbf{9}$ | $\color{#2da44e}\mathbf{0.65}$ / 1.57 | $\color{#2da44e}\mathbf{338}$ | 0.19 |
-| malinajs | 17.1 / 7.0 / 6.2 | $\color{#2da44e}\mathbf{482}$ | 60 | 29 | 0.84 / 1.71 | 376 | $\color{#2da44e}\mathbf{0.15}$ |
-| _action | 13.2 / 5.0 / 4.3 | 599 | 82 | 19 | 0.68 / 1.55 | 378 | 0.33 |
-| data-action | 13.4 / 5.0 / 4.3 | 597 | 96 | 22 | 0.68 / 1.55 | 378 | 0.24 |
-| stage-left | 14.5 / 5.5 / 4.7 | 711 | 88 | 20 | 0.76 / 1.62 | 398 | 0.28 |
-| vanilla | $\color{#2da44e}\mathbf{12.9}$ / $\color{#2da44e}\mathbf{4.9}$ / $\color{#2da44e}\mathbf{4.2}$ | 569 | 54 | 19 | 0.67 / $\color{#2da44e}\mathbf{1.54}$ | 397 | 0.22 |
+| van-timer | 13.5 / 5.6 / 5.0 | 587 | 48 | 18 | 0.89 / 1.76 | $\color{#2da44e}\mathbf{356}$ | 0.52 |
+| react-timer | 192.9 / 61.3 / 52.9 | 555 | 100 | 53 | 1.42 / 2.58 | $\color{#2da44e}\mathbf{356}$ | 1.41 |
+| svelte-timer | 67.9 / 26.0 / 23.3 | 526 | 68 | 32 | 1.27 / 2.23 | $\color{#2da44e}\mathbf{356}$ | 0.94 |
+| solid-timer | 56.3 / 21.7 / 19.6 | 570 | 52 | 23 | 1.07 / 1.98 | $\color{#2da44e}\mathbf{356}$ | 1.08 |
+| morph-timer | 24.6 / 9.0 / 7.9 | 576 | 47 | 124 | 0.75 / 1.80 | 358 | 0.30 |
+| morph-scoped-timer | 25.1 / 9.1 / 8.1 | 597 | 47 | 14 | 0.75 / 1.76 | 359 | 0.40 |
+| html-tag-timer | 14.8 / 5.8 / 5.0 | 598 | 41 | 11 | $\color{#2da44e}\mathbf{0.66}$ / 1.58 | 358 | 0.40 |
+| malinajs | 17.5 / 7.2 / 6.3 | $\color{#2da44e}\mathbf{503}$ | 40 | 13 | 0.85 / 1.71 | $\color{#2da44e}\mathbf{356}$ | $\color{#2da44e}\mathbf{0.21}$ |
+| _action | 13.7 / 5.1 / 4.4 | 628 | $\color{#2da44e}\mathbf{39}$ | 9 | 0.68 / $\color{#2da44e}\mathbf{1.53}$ | 378 | 0.36 |
+| data-action | 13.9 / 5.1 / 4.4 | 626 | 40 | 9 | 0.68 / 1.54 | 378 | 0.39 |
+| stage-left | 15.0 / 5.6 / 4.9 | 738 | 44 | 9 | 0.76 / 1.61 | 398 | 0.44 |
+| vanilla | $\color{#2da44e}\mathbf{13.3}$ / $\color{#2da44e}\mathbf{5.0}$ / $\color{#2da44e}\mathbf{4.3}$ | 598 | 40 | $\color{#2da44e}\mathbf{8}$ | 0.68 / 1.54 | 397 | 0.36 |
 
 Lower is better in every column, and the best in each is in bold green.
 
 What each column measures:
 
 - **HTML + JS**: the page and every script and stylesheet it loads, less what
-  all of them share (Pico, `main.css`, images, sounds). Compressed with gzip -9
+  all of them share (nimble, `main.css`, images, sounds). Compressed with gzip -9
   and brotli 11.
 - **Source lines**: non-blank lines of the app's own code and `index.html`. About
   200 of them are the shared modules every implementation copies.
@@ -82,19 +83,20 @@ What stands out:
 - **The dependency-free versions are the smallest and lightest**, but not by
   much. VanJS and Malina.js are within 1–2 KB of them, with about the same heap.
 - **Re-rendering everything has a cost, and scoping the render removes it.**
-  morph-timer starts as fast as any of them, but each new timer re-renders and
-  morphs every timer, so adding 20 takes almost as long as React (114 ms against
-  120 ms). morph-scoped-timer renders only the new card, and adds them about 10×
-  faster (12 ms). It costs 20 lines of code and 0.1 KB. Both change the same DOM
+  morph-timer starts about as fast as any of them, but each new timer re-renders
+  and morphs every timer, so adding 20 takes the longest of all, over twice as
+  long as React (124 ms against 53 ms). morph-scoped-timer renders only the new
+  card, and adds them about 9× faster (14 ms). It costs 21 lines of code and
+  0.2 KB. Both change the same DOM
   nodes, because idiomorph leaves unchanged nodes alone. The time goes to
   rendering the HTML and diffing it.
 - **Once the render is scoped, the morph isn't needed.** html-tag-timer has
   the same actions as morph-scoped-timer. It sets `outerHTML`/`innerHTML` on
   the part that changed, and gives the focus back to the element with the same
   `id`. A start, stop or ring changes only the clock button, so that's all it
-  replaces. Without idiomorph or the streaming templates, it's 4.8 KB brotli
-  against 7.9, the same size as the hand-written ones. It adds 20 timers the
-  fastest of all (9 ms). It stays on html-template-tag 4.0.1: from 4.1 on, the
+  replaces. Without idiomorph or the streaming templates, it's 5.0 KB brotli
+  against 8.1, about the size of the hand-written ones, and it adds 20 timers
+  about as fast as they do (11 ms against 8–9). It stays on html-template-tag 4.0.1: from 4.1 on, the
   tag checks the HTML so far against 444 attribute names for every value it
   fills in. That costs about 1 ms per card with the CPU slowed 4×, and tripled
   the time to add 20 timers (34 ms).
@@ -103,10 +105,10 @@ What stands out:
   the page, 1,048 elements in all. Now, like the others, they create a dialog
   when it opens. That brings them to 378, and adding timers got about a third
   faster. VanJS kept two empty `<div>`s for each place a dialog goes (419); it
-  now has 376, like most of the others. What's left comes from the approach: the custom-element versions
-  wrap each card in an `<x-timer>`, the morph versions play the alarm with
-  `new Audio()` instead of an `<audio>` element per timer, and a few pages have
-  a `<template>` or two.
+  now has 356, like most of the others. What's left comes from the approach:
+  the custom-element versions wrap each card in an `<x-timer>`, and a few pages
+  have a `<template>` or two. None keeps an `<audio>` element: they all play the
+  alarm with `new Audio()`.
 - **A running timer costs next to nothing anywhere.** Every implementation shares
   one ticker and updates only the clock text, so 20 running timers take 1.5 ms or
   less of script time a second. The cheapest write the new time into the clock's

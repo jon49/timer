@@ -15,7 +15,8 @@
     let alarmTitle = ""
     let showSettings = false
     let clock
-    let audio
+    let timeEntry
+    let editing = false
     let timeout = 0
     let autoStop = 0
     let stopAudio = () => {}
@@ -35,6 +36,28 @@
             update({ [name]: value })
         }
         input.value = formatTime(timer[name])
+    }
+
+    // The time's inputs show while it's being edited, and while it's zero (as a
+    // new timer's is), since there's nothing to show then. A running timer
+    // keeps going; a new time is for its next start.
+    function total() {
+        return timer.hours * 3600 + timer.minutes * 60 + timer.seconds
+    }
+
+    function showEntry() {
+        return editing || total() === 0
+    }
+
+    function editTime() {
+        editing = true
+        // Malina redraws after this handler; the inputs have to show now to take focus.
+        timeEntry.hidden = false
+        timeEntry.querySelector("input").focus()
+    }
+
+    function leaveTimeEntry(e) {
+        if (!timeEntry.contains(e.relatedTarget)) editing = false
     }
 
     function clear() {
@@ -70,7 +93,7 @@
         let sound = getAlarm(timer.sound, timerStore.data.allowedSounds)
         if (sound) {
             alarmTitle = sound.title
-            stopAudio = playAlarm(audio, sound)
+            stopAudio = playAlarm(new Audio(), sound)
             // Stop the alarm after 2 minutes.
             autoStop = setTimeout(stop, 12e4)
         }
@@ -82,15 +105,17 @@
     }
 </script>
 
-<header class="pb-0">
-    <fieldset role="group">
-        <input id={"timerTitle" + id} class="plain" @change={update({ title: $event.target.value })}
-            value={timer.title} name="title" type="text" placeholder="Title">
-        <label for={"timerTitle" + id} aria-label="Timer Title">&#9998;</label>
-    </fieldset>
+<header class="timer-title">
+    <label for={"timerTitle" + id} aria-label="Timer Title">&#9998;</label>
+    <input id={"timerTitle" + id} class="plain" @change={update({ title: $event.target.value })}
+        value={timer.title} name="title" type="text" placeholder="Title">
+    <button class="plain" @click={clear(), $emit("delete")} aria-label="Delete timer">❌</button>
 </header>
 
-<fieldset role="group" @change={setTime}>
+<button class="plain time" @click={editTime} title="Edit time" hidden={showEntry()}
+    ><span aria-hidden="true">&#9998;</span> {formatClock(total())}</button>
+<fieldset #timeEntry class="nc-join time-entry" hidden={!showEntry()} @change={setTime}
+    @focusin={editing = true} @focusout={leaveTimeEntry}>
     <input value={formatTime(timer.hours)} name="hours" type="number" placeholder="h">
     <input value={formatTime(timer.minutes)} name="minutes" type="number" placeholder="m">
     <input value={formatTime(timer.seconds)} name="seconds" type="number" placeholder="s">
@@ -98,14 +123,12 @@
 
 <div class="flex justify-between">
     <div class="flex">
-        <button #clock @click={toggle} style="width: 140px;"
+        <button #clock class="clock" @click={toggle} style="width: 140px;"
             title={state === "alarm" ? alarmTitle : "Click to stop."}
             aria-label={state === "running" ? "Click to stop." : "Click to start."}
         >{state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}</button>
-        <span hidden><audio #audio loop></audio></span>
         <button @click={start} hidden={state === "stopped"} aria-label="Restart">&#8635;</button>
         <button @click={showSettings = true} aria-label="Timer options">&#9881;</button>
-        <button @click={clear(), $emit("delete")} aria-label="Delete timer">❌</button>
     </div>
 </div>
 

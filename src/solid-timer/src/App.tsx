@@ -58,7 +58,7 @@ export default function App() {
                 </section>
             </main>
 
-            <footer class="container">
+            <footer>
                 <a href="https://github.com/jon49/timer/tree/master/src/solid-timer">Source Code</a>
                 <br />
                 <small>Created with <a href="https://www.solidjs.com/">SolidJS</a></small>

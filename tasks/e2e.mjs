@@ -5,10 +5,13 @@
 // The page contract the checks rely on, which is what a user sees:
 // - header: "Add Timer", the logo (also adds a timer), and buttons labeled
 //   "Options for all timers", "Download timer data", "Upload timer data";
-// - each timer is a top-level <article> in <main> with inputs named title,
-//   hours, minutes and seconds, then the clock button (Start / the countdown /
-//   Stop) as its first button, then "Restart", "Timer options" and
-//   "Delete timer" buttons;
+// - each timer is a top-level <article> in <main>. Its <header> holds, in
+//   order, the pencil <label>, the input named title and the "Delete timer"
+//   button. Then the time: a button titled "Edit time" that shows it, and
+//   inputs named hours, minutes and seconds, shown instead while it's being
+//   edited (or while it's zero, as a new timer's is). Then the clock button
+//   (Start / the countdown / Stop, labeled "Click to start." or "Click to
+//   stop."), and "Restart" and "Timer options" buttons;
 // - dialogs are modal <dialog>s with a "Close" button.
 import { chromium } from "playwright"
 import { spawn } from "node:child_process"
@@ -46,10 +49,11 @@ class Failure extends Error {}
 function expect(cond, msg) { if (!cond) throw new Failure(msg) }
 
 let cards = page => page.locator("main article:not(article article)")
-let clockOf = card => card.locator("button").first()
+let clockOf = card => card.locator("button[aria-label='Click to start.'], button[aria-label='Click to stop.']")
+let timeOf = card => card.locator("button[title='Edit time']")
 let text = async l => (await l.textContent()).trim()
 let openDialogs = page => page.locator("dialog[open]")
-let audios = page => page.evaluate(() => window.__audios.map(a => ({ src: new URL(a.src, location.href).pathname, paused: a.paused, volume: a.volume })))
+let audios = page => page.evaluate(() => window.__audios.map(a => ({ src: new URL(a.src, location.href).pathname, paused: a.paused, loop: a.loop, volume: a.volume })))
 
 async function open(browser, path, stored, { clock = false } = {}) {
     let context = await browser.newContext({ acceptDownloads: true })
@@ -78,8 +82,10 @@ async function open(browser, path, stored, { clock = false } = {}) {
 
 let stored = page => page.evaluate(() => JSON.parse(localStorage.timers))
 
+// Clicks the time first if its inputs aren't showing.
 async function setField(card, name, value) {
     let input = card.locator(`input[name=${name}]`)
+    if (!(await input.isVisible())) await timeOf(card).click()
     await input.fill(value)
     await input.press("Tab")
     await wait(50)
@@ -95,7 +101,55 @@ let checks = {
         expect(await cards(page).count() === 2, `expected 2 timers, saw ${await cards(page).count()}`)
         let s = await stored(page)
         expect(s.timers.map(t => t.id).join() === "1,2", `ids ${s.timers.map(t => t.id)}`)
-        expect(await text(clockOf(cards(page).first())) === "Start", "new timer shows Start")
+        let card = cards(page).first()
+        expect(await text(clockOf(card)) === "Start", "new timer shows Start")
+        expect(await card.locator("input[name=hours]").isVisible() && !(await timeOf(card).isVisible()),
+            "a new timer shows the time's inputs")
+        let order = await card.locator("header").evaluate(h => [...h.querySelectorAll("label, input, button")]
+            .map(el => el.tagName === "BUTTON" ? el.getAttribute("aria-label") : el.tagName))
+        expect(order.join() === "LABEL,INPUT,Delete timer", `the header holds ${order}`)
+        await context.close()
+    },
+
+    async "the time takes a click to edit, and a running timer keeps going"(browser, path) {
+        let { context, page } = await open(browser, path, data([{ ...timer(1), seconds: 5 }]))
+        let card = cards(page).first()
+        let seconds = card.locator("input[name=seconds]")
+        let time = timeOf(card)
+        let clock = clockOf(card)
+        expect(!(await seconds.isVisible()), "a timer with a time shows it, not the inputs")
+        expect((await text(time)).endsWith("00:00:05"), `time shows ${await text(time)}`)
+        await clock.click()
+        await wait(1200)
+        await time.click()
+        await wait(50)
+        expect(await seconds.isVisible() && !(await time.isVisible()), "a click shows the inputs")
+        let focused = await page.evaluate(() => document.activeElement?.getAttribute("name"))
+        expect(focused === "hours", `and focuses hours, focused ${focused}`)
+        await seconds.fill("30")
+        await seconds.press("Tab")
+        await wait(100)
+        expect(!(await seconds.isVisible()) && await time.isVisible(), "leaving the inputs shows the time again")
+        expect((await text(time)).endsWith("00:00:30"), `time shows ${await text(time)}`)
+        expect((await stored(page)).timers[0].seconds === 30, "the new time is saved")
+        expect(await clock.getAttribute("aria-label") === "Click to stop." && /^00:00:0[1-4]$/.test(await text(clock)),
+            `still running, shows ${await text(clock)}`)
+        await card.locator("button[aria-label=Restart]").click()
+        await wait(300)
+        expect(await text(clock) === "00:00:30", `restart uses the new time, shows ${await text(clock)}`)
+        await clock.click()
+
+        for (let [key, minutes, shown] of [["Enter", "2", "00:02:30"], ["Escape", "3", "00:03:30"]]) {
+            await time.click()
+            await wait(50)
+            let input = card.locator("input[name=minutes]")
+            await input.fill(minutes)
+            await input.press(key)
+            await wait(100)
+            expect(!(await seconds.isVisible()) && await time.isVisible(), `${key} shows the time again`)
+            expect((await text(time)).endsWith(shown), `${key} saves the time, shows ${await text(time)}`)
+            expect(await clock.evaluate(b => document.activeElement === b), `${key} focuses the clock`)
+        }
         await context.close()
     },
 
@@ -138,8 +192,9 @@ let checks = {
         expect(await clock.evaluate(b => document.activeElement === b), "alarm focuses the clock")
         expect(await clock.getAttribute("title") === "Forest", `alarm title ${await clock.getAttribute("title")}`)
         let a = (await audios(page)).at(-1)
-        expect(a?.src === "/media/forest.wav" && !a.paused, `audio ${JSON.stringify(a)}`)
+        expect(a?.src === "/media/forest.wav" && !a.paused && a.loop, `audio ${JSON.stringify(a)}`)
         expect(a.volume <= 0.02, `fades in from quiet, volume ${a.volume}`)
+        expect(await page.locator("audio").count() === 0, "plays with new Audio(), not an <audio> element")
         await clock.click()
         await wait(100)
         expect(await text(clock) === "Start", "Stop returns to Start")

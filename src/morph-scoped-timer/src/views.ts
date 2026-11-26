@@ -4,7 +4,7 @@ import { timerStore } from "./shared/data-store"
 import { soundOptions } from "./shared/sounds"
 import type { TimerData } from "./shared/types"
 import { formatTime } from "./shared/utils"
-import { runs, ui } from "./state"
+import { runs, showsTimeEntry, ui } from "./state"
 
 let alarmSounds = soundOptions.slice(1)
 let when = (b: unknown, s: string) => b ? s : ""
@@ -15,16 +15,18 @@ export function timersView() {
 
 export function timerView(id: number) {
     let t = timerStore.getTimer(id)
+    let entry = showsTimeEntry(id)
     return html`
 <article id="timer-${id}">
-    <header class="pb-0">
-        <fieldset role="group">
-            <input id="timer-title-${id}" class="plain" name="title" type="text" placeholder="Title"
-                value="${t.title}" data-id="${id}" _change="setTitle">
-            <label for="timer-title-${id}" aria-label="Timer Title">&#9998;</label>
-        </fieldset>
+    <header class="timer-title">
+        <label for="timer-title-${id}" aria-label="Timer Title">&#9998;</label>
+        <input id="timer-title-${id}" class="plain" name="title" type="text" placeholder="Title"
+            value="${t.title}" data-id="${id}" _change="setTitle">
+        <button class="plain" data-id="${id}" _click="deleteTimer" aria-label="Delete timer">❌</button>
     </header>
-    <fieldset role="group">
+    <button id="time-${id}" class="plain time" data-id="${id}" _click="editTime" title="Edit time" $${when(entry, "hidden")}
+        ><span aria-hidden="true">&#9998;</span> ${formatClock(timerStore.getTotalTime(id))}</button>
+    <fieldset id="time-entry-${id}" class="nc-join time-entry" data-id="${id}" _load="timeEntry" $${when(!entry, "hidden")}>
         ${(["hours", "minutes", "seconds"] as const).map(name => html`
         <input name="${name}" type="number" placeholder="${name[0]}"
             value="${formatTime(t[name])}" data-id="${id}" _change="setTime">`)}
@@ -34,7 +36,6 @@ export function timerView(id: number) {
             ${clockView(id)}
             <button data-id="${id}" _click="start" aria-label="Restart" $${when(!runs.has(id), "hidden")}>&#8635;</button>
             <button data-id="${id}" _click="openTimerSettings" aria-label="Timer options">&#9881;</button>
-            <button data-id="${id}" _click="deleteTimer" aria-label="Delete timer">❌</button>
         </div>
     </div>
 </article>`
@@ -45,17 +46,17 @@ export function timerView(id: number) {
 function clockView(id: number) {
     let run = runs.get(id)
     if (!run) return html`
-<button id="clock-${id}" data-id="${id}" _click="start" style="width: 140px"
+<button id="clock-${id}" class="clock" data-id="${id}" _click="start" style="width: 140px"
     title="Click to stop." aria-label="Click to start.">Start</button>`
 
     if (run.state === "running") return html`
-<button id="clock-${id}" data-id="${id}" _click="stop" style="width: 140px"
+<button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"
     title="Click to stop." aria-label="Click to stop."
     ><span id="countdown-${id}-${run.startedAt}" _load="countdown" data-id="${id}" data-end="${run.end}"
     >${formatClock(Math.ceil((run.end - Date.now()) / 1e3))}</span></button>`
 
     return html`
-<button id="clock-${id}" data-id="${id}" _click="stop" style="width: 140px"
+<button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"
     title="${run.sound?.title ?? ""}" aria-label="Click to start."
     ><span id="alarm-${id}-${run.startedAt}" _load="alarm" data-id="${id}" data-url="${run.sound?.url ?? ""}"
     >Stop</span></button>`

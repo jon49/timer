@@ -52,7 +52,7 @@ export default function App() {
                 </section>
             </main>
 
-            <footer className="container">
+            <footer>
                 <a href="https://github.com/jon49/timer/tree/master/src/react-timer">Source Code</a>
                 <br />
                 <small>Created with <a href="https://react.dev/">React</a></small>

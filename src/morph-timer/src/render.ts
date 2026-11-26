@@ -7,11 +7,11 @@ let queued = false
 let rendering = Promise.resolve()
 
 // Renders the whole app to HTML and morphs it into the page. Calls in the same
-// tick share one render.
+// tick share one render. Returns when it's done.
 export function render() {
-    if (queued) return
+    if (queued) return rendering
     queued = true
-    rendering = rendering.then(async () => {
+    return rendering = rendering.then(async () => {
         queued = false
         let text = ""
         for await (let s of appView()) text += s
