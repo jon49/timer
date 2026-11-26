@@ -1,6 +1,6 @@
 <script lang="ts">
     import { untrack } from "svelte"
-    import { formatClock, getAlarm, playAlarm } from "../shared/alarm"
+    import { getAlarm, playAlarm } from "../shared/alarm"
     import { timerStore } from "../shared/data-store"
     import { tickCoordinator } from "../shared/tick-coordinator"
     import type { TimerState } from "../shared/utils"
@@ -10,17 +10,18 @@
         sound,
         startedAt,
         timerState = $bindable(),
+        timeLeft = $bindable(),
         onStart,
     }: {
         id: number
         sound: string | null
         startedAt: number
         timerState: TimerState
+        timeLeft: number
         onStart: () => void
     } = $props()
 
     let button: HTMLButtonElement
-    let timeLeft = $state(0)
     let alarmTitle = $state("")
 
     // Running: count down from the wall clock. Re-runs when restarted
@@ -69,11 +70,5 @@
     style="width: 140px"
     title={timerState === "alarm" ? alarmTitle : "Click to stop."}
     aria-label={timerState === "running" ? "Click to stop." : "Click to start."}>
-    {#if timerState === "alarm"}
-        Stop
-    {:else if timerState === "stopped"}
-        Start
-    {:else}
-        {formatClock(timeLeft)}
-    {/if}
+    {timerState === "stopped" ? "Start" : "Stop"}
 </button>

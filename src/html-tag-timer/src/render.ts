@@ -24,11 +24,12 @@ export function renderTimers() {
     swap($("timers"), timersView(), "innerHTML")
 }
 
-// A timer's clock, after it starts, stops or rings.
+// A timer's clock and time, after it starts, stops or rings.
 export function renderClock(id: number) {
     swap($(`clock-${id}`), clockView(id), "outerHTML")
     let restart = $(`restart-${id}`)
     if (restart) restart.hidden = !runs.has(id)
+    renderTime(id)
 }
 
 // A timer's time, after it changes or its inputs show or hide. The inputs are

@@ -1,9 +1,11 @@
 import { createEffect, createSignal } from "solid-js"
-import { formatClock, getAlarm, playAlarm } from "../shared/alarm"
+import { getAlarm, playAlarm } from "../shared/alarm"
 import { timerStore } from "../shared/data-store"
 import { tickCoordinator } from "../shared/tick-coordinator"
 import type { TimerState } from "../shared/utils"
 
+// The Start/Stop button, and the countdown behind it. The time left goes to
+// `onTimeLeft`, for the card's time to show.
 export function CountDownTimer(props: {
     id: number
     sound: string | null
@@ -11,9 +13,9 @@ export function CountDownTimer(props: {
     startedAt: number
     onStart: () => void
     onStateChange: (state: TimerState) => void
+    onTimeLeft: (seconds: number) => void
 }) {
     let button!: HTMLButtonElement
-    const [timeLeft, setTimeLeft] = createSignal(0)
     const [alarmTitle, setAlarmTitle] = createSignal("")
 
     // Running: count down from the wall clock. Re-runs when restarted
@@ -26,8 +28,8 @@ export function CountDownTimer(props: {
         },
         run => {
             if (!run) return
-            setTimeLeft(run.total)
-            tickCoordinator.subscribe(run.id, now => setTimeLeft(run.total - (now - run.start)))
+            props.onTimeLeft(run.total)
+            tickCoordinator.subscribe(run.id, now => props.onTimeLeft(run.total - (now - run.start)))
             const timeout = setTimeout(() => props.onStateChange("alarm"), run.total * 1e3)
             return () => {
                 tickCoordinator.unsubscribe(run.id)
@@ -68,11 +70,7 @@ export function CountDownTimer(props: {
             style={{ width: "140px" }}
             title={props.state === "alarm" ? alarmTitle() : "Click to stop."}
             aria-label={props.state === "running" ? "Click to stop." : "Click to start."}>
-            {props.state === "alarm"
-                ? "Stop"
-                : props.state === "stopped"
-                    ? "Start"
-                    : formatClock(timeLeft())}
+            {props.state === "stopped" ? "Start" : "Stop"}
         </button>
     )
 }

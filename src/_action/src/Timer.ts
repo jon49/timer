@@ -76,9 +76,15 @@ export class Timer {
     let $ = this.$
     let total = timerStore.getTotalTime(this.id)
     let entry = this.editing || total === 0
-    $.time = formatClock(total)
+    $.time = this.timeText()
     $.$timeButton.hidden = entry
     $.$timeEntry.hidden = !entry
+  }
+
+  // The countdown while running, 00:00:00 while ringing, else the set time.
+  timeText() {
+    if (this.state === "running") return formatClock(this.totalTime - (Math.floor(Date.now() / 1e3) - this.startedAt))
+    return formatClock(this.state === "alarm" ? 0 : timerStore.getTotalTime(this.id))
   }
 
   editTime() {
@@ -124,7 +130,8 @@ export class Timer {
     this.state = "running"
     this.startedAt = Math.floor(Date.now() / 1e3)
     this.totalTime = timerStore.getTotalTime(this.id)
-    $.clock = formatClock(this.totalTime)
+    $.clock = "Stop"
+    this.showTime()
     $.$clock.title = "Click to stop."
     $.$clock.ariaLabel = "Click to stop."
     $.$restart.hidden = false
@@ -140,6 +147,7 @@ export class Timer {
     $.$clock.title = "Click to stop."
     $.$clock.ariaLabel = "Click to start."
     $.$restart.hidden = true
+    this.showTime()
   }
 
   clear() {
@@ -157,6 +165,7 @@ export class Timer {
     $.clock = "Stop"
     $.$clock.ariaLabel = "Click to start."
     $.$clock.focus()
+    this.showTime()
 
     let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
     if (!sound) return
@@ -167,7 +176,7 @@ export class Timer {
   }
 
   tick(now: number) {
-    this.$.clock = formatClock(this.totalTime - (now - this.startedAt))
+    this.$.time = formatClock(this.totalTime - (now - this.startedAt))
   }
 }
 

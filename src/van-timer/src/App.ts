@@ -65,6 +65,7 @@ function App() {
                             }))),
                 ),
                 ul(
+                    li(button({ class: "theme-toggle", ariaLabel: "Toggle theme", title: "Toggle theme" })),
                     li(button({ onclick: addTimer }, "Add Timer")),
                     li(GlobalSettings()),
                     li(button({

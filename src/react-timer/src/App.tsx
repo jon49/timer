@@ -30,6 +30,7 @@ export default function App() {
                         </li>
                     </ul>
                     <ul>
+                        <li><button className="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button></li>
                         <li><button onClick={addTimer}>Add Timer</button></li>
                         <li><GlobalSettings /></li>
                         <li>

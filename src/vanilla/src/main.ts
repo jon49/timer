@@ -75,7 +75,7 @@ class App extends HTMLElement {
         uploadData()
     }
 
-    editSettings() {
+    openAppSettings() {
         let allowed = timerStore.data.allowedSounds
         let dialog = showDialog(`
 <dialog>
@@ -151,10 +151,10 @@ const timerTemplate = html`
     </fieldset>
     <div class="flex justify-between">
         <div class=flex>
-            <button x=clock class=clock data-action=toggleClock style="width: 140px;"
+            <button x=clock class=clock data-action=toggleTimerState style="width: 140px;"
                 title="Click to stop." aria-label="Click to start.">Start</button>
-            <button x=restart data-action=startClock hidden aria-label=Restart>&#8635;</button>
-            <button data-action=editSettings aria-label="Timer options">&#9881;</button>
+            <button x=restart data-action=start hidden aria-label=Restart>&#8635;</button>
+            <button data-action=openSettings aria-label="Timer options">&#9881;</button>
         </div>
     </div>
 </article>`
@@ -166,7 +166,7 @@ class Timer extends HTMLElement {
     editing = false
     startedAt = 0
     totalTime = 0
-    timeoutId: number | undefined
+    clockTimeoutId: number | undefined
     alarmTimeoutId: number | undefined
     stopAudio = () => { }
 
@@ -226,9 +226,15 @@ class Timer extends HTMLElement {
         let $ = this.$
         let total = timerStore.getTotalTime(this.id_)
         let entry = this.editing || total === 0
-        $.time = formatClock(total)
+        $.time = this.timeText()
         $.$timeButton.hidden = entry
         $.$timeEntry.hidden = !entry
+    }
+
+    // The countdown while running, 00:00:00 while ringing, else the set time.
+    timeText() {
+        if (this.state === "running") return formatClock(this.totalTime - (Math.floor(Date.now() / 1e3) - this.startedAt))
+        return formatClock(this.state === "alarm" ? 0 : timerStore.getTotalTime(this.id_))
     }
 
     editTime() {
@@ -237,68 +243,71 @@ class Timer extends HTMLElement {
         this.$.$hours.focus()
     }
 
-    toggleClock() {
+    toggleTimerState() {
         if (this.state === "stopped") {
-            this.startClock()
+            this.start()
         } else {
-            this.stopClock()
+            this.stop()
         }
     }
 
     // Also restarts a running or ringing timer.
-    startClock() {
-        this.clearClock()
+    start() {
+        this.clear()
         let $ = this.$
         this.state = "running"
         this.startedAt = Math.floor(Date.now() / 1e3)
         this.totalTime = timerStore.getTotalTime(this.id_)
-        $.clock = formatClock(this.totalTime)
+        $.clock = "Stop"
         $.$clock.ariaLabel = "Click to stop."
         $.$restart.hidden = false
-        tickCoordinator.subscribe(this.id_, now => $.clock = formatClock(this.totalTime - (now - this.startedAt)))
-        this.timeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
+        this.showTime()
+        tickCoordinator.subscribe(this.id_, now => $.time = formatClock(this.totalTime - (now - this.startedAt)))
+        this.clockTimeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
     }
 
-    stopClock() {
-        this.clearClock()
+    stop() {
+        this.clear()
         let $ = this.$
         this.state = "stopped"
         $.clock = "Start"
         $.$clock.title = "Click to stop."
         $.$clock.ariaLabel = "Click to start."
         $.$restart.hidden = true
+        this.showTime()
     }
 
-    clearClock() {
+    clear() {
         tickCoordinator.unsubscribe(this.id_)
-        clearTimeout(this.timeoutId)
+        clearTimeout(this.clockTimeoutId)
         clearTimeout(this.alarmTimeoutId)
         this.stopAudio()
         this.stopAudio = () => { }
     }
 
     startAlarm() {
-        this.clearClock()
+        this.clear()
         let $ = this.$
         this.state = "alarm"
         $.clock = "Stop"
         $.$clock.ariaLabel = "Click to start."
         $.$clock.focus()
+        this.showTime()
         let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
         if (!sound) return
         $.$clock.title = sound.title
         this.stopAudio = playAlarm(new Audio(), sound)
         // Stop the alarm after 2 minutes.
-        this.alarmTimeoutId = setTimeout(() => this.stopClock(), 12e4)
+        this.alarmTimeoutId = setTimeout(() => this.stop(), 12e4)
     }
 
     deleteTimer() {
-        this.clearClock()
+        this.clear()
         timerStore.deleteTimer(this.id_)
         this.remove()
     }
 
-    editSettings() {
+    openSettings() {
         let sound = this.timer.sound ?? "default"
         showDialog(`
 <dialog>

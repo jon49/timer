@@ -113,7 +113,7 @@
 </header>
 
 <button class="plain time" @click={editTime} title="Edit time" hidden={showEntry()}
-    ><span aria-hidden="true">&#9998;</span> {formatClock(total())}</button>
+    ><span aria-hidden="true">&#9998;</span> {formatClock(state === "running" ? timeLeft : state === "alarm" ? 0 : total())}</button>
 <fieldset #timeEntry class="nc-join time-entry" hidden={!showEntry()} @change={setTime}
     @focusin={editing = true} @focusout={leaveTimeEntry}>
     <input value={formatTime(timer.hours)} name="hours" type="number" placeholder="h">
@@ -126,7 +126,7 @@
         <button #clock class="clock" @click={toggle} style="width: 140px;"
             title={state === "alarm" ? alarmTitle : "Click to stop."}
             aria-label={state === "running" ? "Click to stop." : "Click to start."}
-        >{state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}</button>
+        >{state === "stopped" ? "Start" : "Stop"}</button>
         <button @click={start} hidden={state === "stopped"} aria-label="Restart">&#8635;</button>
         <button @click={showSettings = true} aria-label="Timer options">&#9881;</button>
     </div>

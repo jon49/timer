@@ -15,6 +15,7 @@ export function Timer(props: { id: number, onDelete: () => void }) {
     const [startedAt, setStartedAt] = createSignal(0)
     const [settingsOpen, setSettingsOpen] = createSignal(false)
     const [editing, setEditing] = createSignal(false)
+    const [timeLeft, setTimeLeft] = createSignal(0)
     let timeEntry!: HTMLFieldSetElement
 
     createEffect(timer, t => timerStore.updateTimer(t), { defer: true })
@@ -75,7 +76,8 @@ export function Timer(props: { id: number, onDelete: () => void }) {
             </header>
 
             <button class="plain time" onClick={editTime} title="Edit time" hidden={showEntry()}>
-                <span aria-hidden="true">&#9998;</span> {formatClock(total())}
+                <span aria-hidden="true">&#9998;</span> {formatClock(
+                    timerState() === "running" ? timeLeft() : timerState() === "alarm" ? 0 : total())}
             </button>
             <fieldset ref={timeEntry} class="nc-join time-entry" hidden={!showEntry()}
                 onFocusIn={() => setEditing(true)} onFocusOut={leaveTimeEntry}>
@@ -92,7 +94,8 @@ export function Timer(props: { id: number, onDelete: () => void }) {
                         state={timerState()}
                         startedAt={startedAt()}
                         onStart={start}
-                        onStateChange={setTimerState} />
+                        onStateChange={setTimerState}
+                        onTimeLeft={setTimeLeft} />
                     <button onClick={start} hidden={timerState() === "stopped"} aria-label="Restart">&#8635;</button>
                     <button onClick={() => setSettingsOpen(true)} aria-label="Timer options">&#9881;</button>
                 </div>

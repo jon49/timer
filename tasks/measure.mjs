@@ -111,7 +111,7 @@ let startButtons = page => page.locator("main button:visible", { hasText: /^\s*S
 
 async function measure(browser, [name, path, dir, framework, deps]) {
     // Size: the HTML, scripts and styles the page loads, less what every
-    // implementation shares (nimble, main.css), images and sounds.
+    // implementation shares (nimble, main.css, theme.js), images and sounds.
     let { context, page, cdp } = await newPage(browser, { data: seed })
     let loaded = new Set()
     page.on("response", r => {
@@ -123,7 +123,7 @@ async function measure(browser, [name, path, dir, framework, deps]) {
     await page.goto(base + path, { waitUntil: "networkidle" })
     let rendered = await page.evaluate(() => Math.max(document.querySelectorAll("main article:not(article article)").length, document.querySelectorAll("x-timer").length))
     let files = [...loaded]
-        .filter(p => !/\/css\/(nimble|main)\.css$/.test(p))
+        .filter(p => !/\/(css\/(nimble|main)\.css|js\/theme\.js)$/.test(p))
         .map(p => join(dist, p.endsWith("/") ? p + "index.html" : p))
         .filter(existsSync)
     let size = sizes(files)

@@ -15,6 +15,7 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
     let [startedAt, setStartedAt] = useState(0)
     let [settingsOpen, setSettingsOpen] = useState(false)
     let [editing, setEditing] = useState(false)
+    let [timeLeft, setTimeLeft] = useState(0)
     let timeEntry = useRef<HTMLFieldSetElement>(null)
 
     useEffect(() => timerStore.updateTimer(timer), [timer])
@@ -75,7 +76,8 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
             </header>
 
             <button className="plain time" onClick={editTime} title="Edit time" hidden={showEntry}>
-                <span aria-hidden="true">&#9998;</span> {formatClock(total)}
+                <span aria-hidden="true">&#9998;</span> {formatClock(
+                    timerState === "running" ? timeLeft : timerState === "alarm" ? 0 : total)}
             </button>
             <fieldset ref={timeEntry} className="nc-join time-entry" hidden={!showEntry}
                 onFocus={() => setEditing(true)} onBlur={leaveTimeEntry}>
@@ -87,7 +89,7 @@ export function Timer({ id, onDelete }: { id: number, onDelete: () => void }) {
             <div className="flex justify-between">
                 <div className="flex">
                     <CountDownTimer id={id} sound={timer.sound} state={timerState} startedAt={startedAt}
-                        onStart={start} onStateChange={setTimerState} />
+                        onStart={start} onStateChange={setTimerState} onTimeLeft={setTimeLeft} />
                     <button onClick={start} hidden={timerState === "stopped"} aria-label="Restart">&#8635;</button>
                     <button onClick={() => setSettingsOpen(true)} aria-label="Timer options">&#9881;</button>
                 </div>

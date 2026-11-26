@@ -47,7 +47,7 @@ class App extends HTMLElement {
         uploadData()
     }
 
-    editSettings() {
+    openAppSettings() {
         let template = allowedSoundsTemplate()
         let root = template.root as HTMLDialogElement
         let checkboxes = Array.from(root.querySelectorAll<HTMLInputElement>("input[type=checkbox]"))
@@ -150,9 +150,9 @@ const timerTemplate = html<TimerTemplate>`
     </fieldset>
     <div class="flex justify-between">
         <div class=flex>
-            <button #=clockEl #title=clockTitle #aria-label=clockLabel class=clock data-action=toggleClock style="width: 140px;">#clock</button>
-            <button #=restartEl data-action=startClock aria-label=Restart>&#8635;</button>
-            <button data-action=editSettings aria-label="Timer options">&#9881;</button>
+            <button #=clockEl #title=clockTitle #aria-label=clockLabel class=clock data-action=toggleTimerState style="width: 140px;">#clock</button>
+            <button #=restartEl data-action=start aria-label=Restart>&#8635;</button>
+            <button data-action=openSettings aria-label="Timer options">&#9881;</button>
         </div>
     </div>
 </article>`
@@ -165,7 +165,7 @@ class Timer extends HTMLElement {
     editing = false
     startedAt = 0
     totalTime = 0
-    timeoutId: number | undefined
+    clockTimeoutId: number | undefined
     alarmTimeoutId: number | undefined
     stopAudio = () => { }
 
@@ -191,7 +191,7 @@ class Timer extends HTMLElement {
             this.showTime()
         })
         this.showTime()
-        this.showStopped()
+        this.stop()
     }
 
     handleEvent(event: Event) {
@@ -227,9 +227,15 @@ class Timer extends HTMLElement {
     showTime() {
         let total = timerStore.getTotalTime(this.id_)
         let entry = this.editing || total === 0
-        this.template.update({ time: formatClock(total) })
+        this.template.update({ time: this.timeText() })
         this.node.timeButtonEl.hidden = entry
         this.node.timeEntryEl.hidden = !entry
+    }
+
+    // The countdown while running, 00:00:00 while ringing, else the set time.
+    timeText() {
+        if (this.state === "running") return formatClock(this.totalTime - (Math.floor(Date.now() / 1e3) - this.startedAt))
+        return formatClock(this.state === "alarm" ? 0 : timerStore.getTotalTime(this.id_))
     }
 
     editTime() {
@@ -238,66 +244,65 @@ class Timer extends HTMLElement {
         this.node.hoursEl.focus()
     }
 
-    toggleClock() {
+    toggleTimerState() {
         if (this.state === "stopped") {
-            this.startClock()
+            this.start()
         } else {
-            this.stopClock()
+            this.stop()
         }
     }
 
     // Also restarts a running or ringing timer.
-    startClock() {
-        this.clearClock()
+    start() {
+        this.clear()
         this.state = "running"
         this.startedAt = Math.floor(Date.now() / 1e3)
         this.totalTime = timerStore.getTotalTime(this.id_)
-        this.template.update({ clock: formatClock(this.totalTime), clockTitle: "Click to stop.", clockLabel: "Click to stop." })
+        this.template.update({ clock: "Stop", clockTitle: "Click to stop.", clockLabel: "Click to stop." })
         this.node.restartEl.hidden = false
+        this.showTime()
         tickCoordinator.subscribe(this.id_, now =>
-            this.template.update({ clock: formatClock(this.totalTime - (now - this.startedAt)) }))
-        this.timeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
+            this.template.update({ time: formatClock(this.totalTime - (now - this.startedAt)) }))
+        this.clockTimeoutId = setTimeout(() => this.startAlarm(), this.totalTime * 1e3)
     }
 
-    stopClock() {
-        this.clearClock()
-        this.showStopped()
-    }
-
-    showStopped() {
+    stop() {
+        this.clear()
         this.state = "stopped"
         this.template.update({ clock: "Start", clockTitle: "Click to stop.", clockLabel: "Click to start." })
         this.node.restartEl.hidden = true
+        this.showTime()
     }
 
-    clearClock() {
+    clear() {
         tickCoordinator.unsubscribe(this.id_)
-        clearTimeout(this.timeoutId)
+        clearTimeout(this.clockTimeoutId)
         clearTimeout(this.alarmTimeoutId)
         this.stopAudio()
         this.stopAudio = () => { }
     }
 
     startAlarm() {
-        this.clearClock()
+        this.clear()
         this.state = "alarm"
         this.template.update({ clock: "Stop", clockLabel: "Click to start." })
         this.node.clockEl.focus()
+        this.showTime()
         let sound = getAlarm(this.timer.sound, timerStore.data.allowedSounds)
         if (!sound) return
         this.template.update({ clockTitle: sound.title })
         this.stopAudio = playAlarm(new Audio(), sound)
         // Stop the alarm after 2 minutes.
-        this.alarmTimeoutId = setTimeout(() => this.stopClock(), 12e4)
+        this.alarmTimeoutId = setTimeout(() => this.stop(), 12e4)
     }
 
     deleteTimer() {
-        this.clearClock()
+        this.clear()
         timerStore.deleteTimer(this.id_)
         this.remove()
     }
 
-    editSettings() {
+    openSettings() {
         let dialog = timerSettingsTemplate().root as HTMLDialogElement
         let sound = this.timer.sound ?? "default"
         for (let radio of dialog.querySelectorAll<HTMLInputElement>("input[type=radio]")) {

@@ -45,14 +45,20 @@ export function timerView(id: number) {
 }
 
 // The time, as a button that swaps in its inputs. Hidden while they show.
+// While the timer runs, it counts down; while it rings, it shows 00:00:00.
 export function timeView(id: number) {
+    let run = runs.get(id)
+    let time = run?.state === "running"
+        ? html`<span _load="countdown" data-id="${id}" data-end="${run.end}"
+    >${formatClock(Math.ceil((run.end - Date.now()) / 1e3))}</span>`
+        : html`${formatClock(run ? 0 : timerStore.getTotalTime(id))}`
     return html`
 <button id="time-${id}" class="plain time" data-id="${id}" _click="editTime" title="Edit time" $${when(showsTimeEntry(id), "hidden")}
-    ><span aria-hidden="true">&#9998;</span> ${formatClock(timerStore.getTotalTime(id))}</button>`
+    ><span aria-hidden="true">&#9998;</span> $${time}</button>`
 }
 
-// Starting, stopping and ringing change only this button (and whether the
-// restart button is hidden), so it's rendered on its own.
+// Starting, stopping and ringing change only this button and the time (and
+// whether the restart button is hidden), so they're rendered on their own.
 export function clockView(id: number) {
     let run = runs.get(id)
     if (!run) return html`
@@ -61,9 +67,7 @@ export function clockView(id: number) {
 
     if (run.state === "running") return html`
 <button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"
-    title="Click to stop." aria-label="Click to stop."
-    ><span _load="countdown" data-id="${id}" data-end="${run.end}"
-    >${formatClock(Math.ceil((run.end - Date.now()) / 1e3))}</span></button>`
+    title="Click to stop." aria-label="Click to stop.">Stop</button>`
 
     return html`
 <button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"

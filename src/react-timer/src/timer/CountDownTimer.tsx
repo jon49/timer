@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from "react"
-import { formatClock, getAlarm, playAlarm } from "../shared/alarm"
+import { getAlarm, playAlarm } from "../shared/alarm"
 import { timerStore } from "../shared/data-store"
 import { tickCoordinator } from "../shared/tick-coordinator"
 import type { TimerState } from "../shared/utils"
 
-export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateChange }: {
+// The Start/Stop button, and the countdown behind it. The time left goes to
+// `onTimeLeft`, for the card's time to show.
+export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateChange, onTimeLeft }: {
     id: number
     sound: string | null
     state: TimerState
     startedAt: number
     onStart: () => void
     onStateChange: (state: TimerState) => void
+    onTimeLeft: (seconds: number) => void
 }) {
     let button = useRef<HTMLButtonElement>(null)
-    let [timeLeft, setTimeLeft] = useState(0)
     let [alarmTitle, setAlarmTitle] = useState("")
     // The latest values, for effects that shouldn't re-run when they change.
     let latest = useRef({ sound, onStateChange })
@@ -25,14 +27,14 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
         if (state !== "running") return
         let start = Math.floor(startedAt / 1e3)
         let total = timerStore.getTotalTime(id)
-        setTimeLeft(total)
-        tickCoordinator.subscribe(id, now => setTimeLeft(total - (now - start)))
+        onTimeLeft(total)
+        tickCoordinator.subscribe(id, now => onTimeLeft(total - (now - start)))
         let timeout = setTimeout(() => latest.current.onStateChange("alarm"), total * 1e3)
         return () => {
             tickCoordinator.unsubscribe(id)
             clearTimeout(timeout)
         }
-    }, [id, state, startedAt])
+    }, [id, state, startedAt, onTimeLeft])
 
     // Alarm: play the sound, auto-stop after 2 minutes.
     useEffect(() => {
@@ -62,7 +64,7 @@ export function CountDownTimer({ id, sound, state, startedAt, onStart, onStateCh
             style={{ width: "140px" }}
             title={state === "alarm" ? alarmTitle : "Click to stop."}
             aria-label={state === "running" ? "Click to stop." : "Click to start."}>
-            {state === "alarm" ? "Stop" : state === "stopped" ? "Start" : formatClock(timeLeft)}
+            {state === "stopped" ? "Start" : "Stop"}
         </button>
     )
 }

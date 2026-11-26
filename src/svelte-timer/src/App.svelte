@@ -32,6 +32,7 @@
             </li>
         </ul>
         <ul>
+            <li><button class="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button></li>
             <li><button onclick={addTimer}>Add Timer</button></li>
             <li><GlobalSettings /></li>
             <li>

@@ -16,6 +16,7 @@ export function Timer(id: number) {
     let timerState = state<TimerState>("stopped")
     let dialogState = state("closed" as DialogState)
     let editing = state(false)
+    let timeLeft = state(0)
 
     // The time's inputs show while it's being edited, and while it's zero (as a
     // new timer's is), since there's nothing to show then. A running timer
@@ -89,12 +90,13 @@ export function Timer(id: number) {
         ),
 
         button({ class: "plain time", onclick: editTime, title: "Edit time", hidden: showEntry },
-            span({ "aria-hidden": "true", innerHTML: "&#9998;" }), " ", () => formatClock(total())),
+            span({ "aria-hidden": "true", innerHTML: "&#9998;" }), " ", () => formatClock(
+                timerState.val === "running" ? timeLeft.val : timerState.val === "alarm" ? 0 : total())),
         $timeEntry,
 
         div({ class: "flex justify-between" },
             div({ class: "flex" },
-                CountDownTimer(id, timer, timerState),
+                CountDownTimer(id, timer, timerState, timeLeft),
                 button({
                     onclick: () => {timerState.val = "stopped"; setTimeout(() => timerState.val = "running", 1)},
                     hidden: () => timerState.val === "stopped",

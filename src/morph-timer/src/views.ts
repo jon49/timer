@@ -29,7 +29,7 @@ function timerView(t: TimerData) {
         <button class="plain" data-id="${id}" _click="deleteTimer" aria-label="Delete timer">❌</button>
     </header>
     <button id="time-${id}" class="plain time" data-id="${id}" _click="editTime" title="Edit time" $${when(entry, "hidden")}
-        ><span aria-hidden="true">&#9998;</span> ${formatClock(timerStore.getTotalTime(id))}</button>
+        ><span aria-hidden="true">&#9998;</span> ${timeView(id)}</button>
     <fieldset id="time-entry-${id}" class="nc-join time-entry" data-id="${id}" _load="timeEntry" $${when(!entry, "hidden")}>
         ${(["hours", "minutes", "seconds"] as const).map(name => html`
         <input name="${name}" type="number" placeholder="${name[0]}"
@@ -45,7 +45,17 @@ function timerView(t: TimerData) {
 </article>`
 }
 
-// The button keeps its id so it keeps focus; the `_load` component inside is
+// The time: counting down while the timer runs, 00:00:00 while it rings. The
+// `_load` component is keyed on when the run started, so a restart gets a
+// fresh one.
+function timeView(id: number) {
+    let run = runs.get(id)
+    if (run?.state === "running") return html`<span id="countdown-${id}-${run.startedAt}" _load="countdown"
+    data-id="${id}" data-end="${run.end}">${formatClock(Math.ceil((run.end - Date.now()) / 1e3))}</span>`
+    return html`${formatClock(run ? 0 : timerStore.getTotalTime(id))}`
+}
+
+// The button keeps its id so it keeps focus; the alarm's `_load` component is
 // keyed on when the run started, so a restart gets a fresh one.
 function clockView(id: number) {
     let run = runs.get(id)
@@ -55,9 +65,7 @@ function clockView(id: number) {
 
     if (run.state === "running") return html`
 <button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"
-    title="Click to stop." aria-label="Click to stop."
-    ><span id="countdown-${id}-${run.startedAt}" _load="countdown" data-id="${id}" data-end="${run.end}"
-    >${formatClock(Math.ceil((run.end - Date.now()) / 1e3))}</span></button>`
+    title="Click to stop." aria-label="Click to stop.">Stop</button>`
 
     return html`
 <button id="clock-${id}" class="clock" data-id="${id}" _click="stop" style="width: 140px"

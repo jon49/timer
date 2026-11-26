@@ -15,6 +15,8 @@
     let startedAt = $state(0)
     let settingsOpen = $state(false)
     let editing = $state(false)
+    // The Start/Stop button counts down; the time shows it.
+    let timeLeft = $state(0)
     let timeEntry: HTMLFieldSetElement
 
     // The time's inputs show while it's being edited, and while it's zero (as a
@@ -70,7 +72,8 @@
 </header>
 
 <button class="plain time" onclick={editTime} title="Edit time" hidden={showEntry}>
-    <span aria-hidden="true">&#9998;</span> {formatClock(total)}
+    <span aria-hidden="true">&#9998;</span> {formatClock(
+        timerState === "running" ? timeLeft : timerState === "alarm" ? 0 : total)}
 </button>
 <fieldset bind:this={timeEntry} class="nc-join time-entry" hidden={!showEntry}
     onfocusin={() => editing = true} onfocusout={leaveTimeEntry}>
@@ -81,7 +84,7 @@
 
 <div class="flex justify-between">
     <div class="flex">
-        <CountDownTimer {id} sound={timer.sound} {startedAt} bind:timerState onStart={start} />
+        <CountDownTimer {id} sound={timer.sound} {startedAt} bind:timerState bind:timeLeft onStart={start} />
         <button onclick={start} hidden={timerState === "stopped"} aria-label="Restart">&#8635;</button>
         <button onclick={() => settingsOpen = true} aria-label="Timer options">&#9881;</button>
     </div>

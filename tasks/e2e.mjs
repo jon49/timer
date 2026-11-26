@@ -3,15 +3,17 @@
 // See tasks/e2e.sh.
 //
 // The page contract the checks rely on, which is what a user sees:
-// - header: "Add Timer", the logo (also adds a timer), and buttons labeled
-//   "Options for all timers", "Download timer data", "Upload timer data";
+// - header: a button labeled "Toggle theme" before "Add Timer", the logo
+//   (also adds a timer), and buttons labeled "Options for all timers",
+//   "Download timer data", "Upload timer data";
 // - each timer is a top-level <article> in <main>. Its <header> holds, in
 //   order, the pencil <label>, the input named title and the "Delete timer"
-//   button. Then the time: a button titled "Edit time" that shows it, and
-//   inputs named hours, minutes and seconds, shown instead while it's being
-//   edited (or while it's zero, as a new timer's is). Then the clock button
-//   (Start / the countdown / Stop, labeled "Click to start." or "Click to
-//   stop."), and "Restart" and "Timer options" buttons;
+//   button. Then the time: a button titled "Edit time" that shows it (the
+//   countdown while running, 00:00:00 while ringing), and inputs named hours,
+//   minutes and seconds, shown instead while it's being edited (or while it's
+//   zero, as a new timer's is). Then the clock button (Start, or Stop while
+//   running or ringing, labeled "Click to start." or "Click to stop."), and
+//   "Restart" and "Timer options" buttons;
 // - dialogs are modal <dialog>s with a "Close" button.
 import { chromium } from "playwright"
 import { spawn } from "node:child_process"
@@ -51,6 +53,7 @@ function expect(cond, msg) { if (!cond) throw new Failure(msg) }
 let cards = page => page.locator("main article:not(article article)")
 let clockOf = card => card.locator("button[aria-label='Click to start.'], button[aria-label='Click to stop.']")
 let timeOf = card => card.locator("button[title='Edit time']")
+let timeText = async card => (await text(timeOf(card))).replace("✎", "").trim()
 let text = async l => (await l.textContent()).trim()
 let openDialogs = page => page.locator("dialog[open]")
 let audios = page => page.evaluate(() => window.__audios.map(a => ({ src: new URL(a.src, location.href).pathname, paused: a.paused, loop: a.loop, volume: a.volume })))
@@ -111,6 +114,23 @@ let checks = {
         await context.close()
     },
 
+    async "the theme toggles, and stays toggled"(browser, path) {
+        let { context, page } = await open(browser, path, data([timer(1)]))
+        let scheme = () => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+        let toggle = page.locator("header button[aria-label='Toggle theme']")
+        let order = await page.locator("header nav button").evaluateAll(bs => bs.map(b => b.getAttribute("aria-label") ?? b.textContent.trim()))
+        expect(order.indexOf("Toggle theme") === order.indexOf("Add Timer") - 1, `the toggle comes before Add Timer: ${order}`)
+        expect(await scheme() === "light dark", `follows the system at first, ${await scheme()}`)
+        await toggle.click()
+        expect(await scheme() === "dark", `the light system's page turns dark, ${await scheme()}`)
+        await page.reload()
+        await page.waitForSelector("header button")
+        expect(await scheme() === "dark", `still dark after a reload, ${await scheme()}`)
+        await toggle.click()
+        expect(await scheme() === "light", `and back to light, ${await scheme()}`)
+        await context.close()
+    },
+
     async "the time takes a click to edit, and a running timer keeps going"(browser, path) {
         let { context, page } = await open(browser, path, data([{ ...timer(1), seconds: 5 }]))
         let card = cards(page).first()
@@ -118,7 +138,7 @@ let checks = {
         let time = timeOf(card)
         let clock = clockOf(card)
         expect(!(await seconds.isVisible()), "a timer with a time shows it, not the inputs")
-        expect((await text(time)).endsWith("00:00:05"), `time shows ${await text(time)}`)
+        expect(await timeText(card) === "00:00:05", `time shows ${await timeText(card)}`)
         await clock.click()
         await wait(1200)
         await time.click()
@@ -130,14 +150,15 @@ let checks = {
         await seconds.press("Tab")
         await wait(100)
         expect(!(await seconds.isVisible()) && await time.isVisible(), "leaving the inputs shows the time again")
-        expect((await text(time)).endsWith("00:00:30"), `time shows ${await text(time)}`)
         expect((await stored(page)).timers[0].seconds === 30, "the new time is saved")
-        expect(await clock.getAttribute("aria-label") === "Click to stop." && /^00:00:0[1-4]$/.test(await text(clock)),
-            `still running, shows ${await text(clock)}`)
+        expect(await text(clock) === "Stop" && /^00:00:0[1-4]$/.test(await timeText(card)),
+            `still running, shows ${await text(clock)} and ${await timeText(card)}`)
         await card.locator("button[aria-label=Restart]").click()
         await wait(300)
-        expect(await text(clock) === "00:00:30", `restart uses the new time, shows ${await text(clock)}`)
+        expect(await timeText(card) === "00:00:30", `restart uses the new time, shows ${await timeText(card)}`)
         await clock.click()
+        await wait(100)
+        expect(await timeText(card) === "00:00:30", `stopped, shows ${await timeText(card)}`)
 
         for (let [key, minutes, shown] of [["Enter", "2", "00:02:30"], ["Escape", "3", "00:03:30"]]) {
             await time.click()
@@ -147,7 +168,7 @@ let checks = {
             await input.press(key)
             await wait(100)
             expect(!(await seconds.isVisible()) && await time.isVisible(), `${key} shows the time again`)
-            expect((await text(time)).endsWith(shown), `${key} saves the time, shows ${await text(time)}`)
+            expect(await timeText(card) === shown, `${key} saves the time, shows ${await timeText(card)}`)
             expect(await clock.evaluate(b => document.activeElement === b), `${key} focuses the clock`)
         }
         await context.close()
@@ -182,13 +203,16 @@ let checks = {
         let restart = card.locator("button[aria-label=Restart]")
         expect(await clock.getAttribute("aria-label") === "Click to start.", "stopped aria-label")
         expect(!(await restart.isVisible()), "restart hidden when stopped")
+        expect(await timeText(card) === "00:00:02", `stopped, the time shows ${await timeText(card)}`)
         await clock.click()
         await wait(300)
-        expect(/^00:00:0[12]$/.test(await text(clock)), `running shows ${await text(clock)}`)
+        expect(await text(clock) === "Stop", `running, the clock shows ${await text(clock)}`)
+        expect(/^00:00:0[12]$/.test(await timeText(card)), `running, the time shows ${await timeText(card)}`)
         expect(await clock.getAttribute("aria-label") === "Click to stop.", "running aria-label")
         expect(await restart.isVisible(), "restart visible while running")
         await wait(2300)
         expect(await text(clock) === "Stop", `alarm shows ${await text(clock)}`)
+        expect(await timeText(card) === "00:00:00", `ringing, the time shows ${await timeText(card)}`)
         expect(await clock.evaluate(b => document.activeElement === b), "alarm focuses the clock")
         expect(await clock.getAttribute("title") === "Forest", `alarm title ${await clock.getAttribute("title")}`)
         let a = (await audios(page)).at(-1)
@@ -198,16 +222,17 @@ let checks = {
         await clock.click()
         await wait(100)
         expect(await text(clock) === "Start", "Stop returns to Start")
+        expect(await timeText(card) === "00:00:02", `stopped, the time shows ${await timeText(card)} again`)
         expect((await audios(page)).every(a => a.paused), "audio stops")
         expect(!(await restart.isVisible()), "restart hidden again")
 
         await setField(card, "seconds", "10")
         await clock.click()
         await wait(2200)
-        let before = await text(clock)
+        let before = await timeText(card)
         await restart.click()
         await wait(300)
-        let after = await text(clock)
+        let after = await timeText(card)
         expect(/^00:00:0[78]$/.test(before) && after === "00:00:10", `restart ${before} -> ${after}`)
         await clock.click()
         await context.close()
@@ -215,10 +240,12 @@ let checks = {
 
     async "alarm stops itself after 2 minutes"(browser, path) {
         let { context, page } = await open(browser, path, data([{ ...timer(1), seconds: 1 }]), { clock: true })
-        let clock = clockOf(cards(page).first())
+        let card = cards(page).first()
+        let clock = clockOf(card)
         await clock.click()
         await page.clock.runFor(2000)
-        expect(await text(clock) === "Stop", `rings, shows ${await text(clock)}`)
+        expect(await text(clock) === "Stop" && await timeText(card) === "00:00:00",
+            `rings, shows ${await text(clock)} and ${await timeText(card)}`)
         await page.clock.runFor(118_000)
         expect(await text(clock) === "Stop", "still ringing before 2 minutes")
         await page.clock.runFor(4000)

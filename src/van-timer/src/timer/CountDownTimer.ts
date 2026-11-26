@@ -9,12 +9,13 @@ import type { TimerData } from "../shared/types"
 let { button } = van.tags
 let { state, derive } = van
 
-export function CountDownTimer(id: number, timer: State<TimerData>, timerState: State<TimerState>) {
+// The Start/Stop button, and the countdown behind it, kept in `timeLeft` for
+// the card's time to show.
+export function CountDownTimer(id: number, timer: State<TimerData>, timerState: State<TimerState>, timeLeft: State<number>) {
     let audioEl = new Audio()
     audioEl.loop = true
     let clockStartedTime = state(0)
     let totalTime = state(0)
-    let timeLeft = state(0)
     let timeoutId = state<number | null>(null)
     let alarmTimeoutId: number | null = null
 
@@ -102,7 +103,7 @@ export function CountDownTimer(id: number, timer: State<TimerData>, timerState: 
             } else if (timerState.val === "stopped") {
                 return "Start"
             }
-            return formatClock(timeLeft.val)
+            return "Stop"
         })),
     ]
 }
